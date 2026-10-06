@@ -1,15 +1,9 @@
 name: Registry drift
 
-# Re-installs every @eq component and fails on any difference. Runs when registry code is touched
-# (catches local edits) and weekly (catches new EQ-librium releases without blocking other PRs).
+# Re-installs every @eq component and fails on any difference. Weekly (catches new EQ-librium
+# releases without blocking other PRs) and on demand. On pull requests that touch registry code the
+# same check runs inside CI (ci.yml), so it does not cost a separate job.
 on:
-  pull_request:
-    paths:
-      - "src/components/ui/**"
-      - "src/components/eq/**"
-      - "src/hooks/**"
-      - "src/lib/utils.ts"
-      - "components.json"
   schedule:
     - cron: "17 6 * * 1"
   workflow_dispatch:
@@ -18,6 +12,7 @@ jobs:
   drift:
     name: Components match @eq registry
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

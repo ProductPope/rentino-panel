@@ -50,9 +50,17 @@ pnpm build && pnpm test:e2e   # e2e runs against the production build
 ./scripts/check-registry.sh   # components still match @eq
 ```
 
+## CI minutes (GitHub Free, private: 2,000 min/month, every job rounded up to a full minute)
+
+Rules in `.github/CI.md`. In short: open PRs as **draft** while iterating (drafts get no CI), push in
+few, validated batches (every push to a ready PR is a full CI run; a newer push cancels the running
+one), mark _Ready for review_ when done. The push to `main` after a merge reuses the green PR result
+when the tree is identical. What may be skipped is decided in `.github/scripts/ci-decide.sh` — always
+with a full-run fallback; never skip or disable tests to save minutes. Every job has `timeout-minutes`.
+
 ## Working agreements
 
 - Small steps, logical commits, a summary after each stage. One PR per stage.
-- **Merge on green CI — standing approval.** When every check on the PR's latest commit is green and
+- **Merge on green CI — standing approval.** A draft PR has no CI: mark it ready first. When every check on the PR's latest commit is green and
   there is no merge conflict, merge it (merge commit) without waiting for a separate go-ahead.
 - Code, UI copy and docs in English.
