@@ -9,6 +9,7 @@ import {
   SettingsIcon,
   ShieldCheckIcon,
   SlidersHorizontalIcon,
+  StarIcon,
   TicketPercentIcon,
   TruckIcon,
   UserCogIcon,
@@ -19,15 +20,18 @@ import {
 import type { AppShellNavGroup } from "@/components/eq/app-shell"
 import { can, type SessionUser } from "@/lib/session/types"
 
+export const WELCOME_HREF = "/welcome"
 export const DISCOUNT_CODES_HREF = "/settings/discount-codes"
+export const BOOKING_PAGE_HREF = "/booking-page"
 
 /**
  * Rentino admin navigation (EQ `RENTINO_PILOT_NAV`). The panel ships section by section:
- * Discount codes is live, everything else is `comingSoon` — remove the flag when a section ships.
+ * Welcome and Discount codes are live, everything else is `comingSoon` — remove the flag when a section ships.
  */
 export const NAVIGATION: AppShellNavGroup[] = [
   {
     items: [
+      { label: "Welcome", href: WELCOME_HREF, icon: <StarIcon /> },
       { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboardIcon />, comingSoon: true },
       { label: "Calendar", href: "/calendar", icon: <CalendarDaysIcon />, comingSoon: true },
       { label: "Orders", href: "/orders", icon: <ReceiptTextIcon />, comingSoon: true },
