@@ -4,6 +4,8 @@ import { expect, type Page } from "@playwright/test"
 /** Every route of the app. Add new pages here: each gets axe, keyboard and reflow checks. */
 export const PAGES = [
   { name: "Discount codes", path: "/settings/discount-codes" },
+  { name: "Discount codes — empty", path: "/settings/discount-codes?mock=empty" },
+  { name: "Discount codes — load error", path: "/settings/discount-codes?mock=error" },
   { name: "Booking page", path: "/booking-page" },
 ] as const
 
@@ -19,6 +21,8 @@ export async function open(page: Page, path: string, theme: Theme = "light") {
   await page.goto(path)
   await page.waitForLoadState("networkidle")
   await page.evaluate(() => document.fonts.ready)
+  // Data loads client-side from the (mock) repository; wait until no region is busy.
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
   if (theme === "dark") await expect(page.locator("html")).toHaveClass(/\bdark\b/)
   else await expect(page.locator("html")).not.toHaveClass(/\bdark\b/)
 }
