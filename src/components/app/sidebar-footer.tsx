@@ -2,7 +2,7 @@ import { GlobeIcon } from "lucide-react"
 import Link from "next/link"
 
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
-import type { SessionUser } from "@/lib/session"
+import type { SessionUser } from "@/lib/session/types"
 
 import { AccountMenu } from "./account-menu"
 

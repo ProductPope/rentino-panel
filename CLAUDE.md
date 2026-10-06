@@ -32,6 +32,11 @@ There is no backend integration, now or planned for this work. Everything a back
 mocked behind a typed interface: the UI imports the interface (`src/lib/**`), never `src/mocks/**`.
 The only place a mock is wired in is the service module (e.g. `src/lib/session/index.ts`).
 
+- Business rules live in `src/lib/<domain>/` as pure functions with unit tests (Vitest); the mock
+  enforces what a backend would (e.g. a used discount code can't be deleted) and writes Logs.
+- Mock data persists in `localStorage` (`rentino.mock.*`). `?mock=empty`, `?mock=error`, `?mock=reset`
+  force a state; the `mock_user=staff` cookie signs in a user without "Manage discount codes".
+
 ## Stack and commands
 
 Next.js (App Router) · React 19 · TypeScript strict (+ `noUncheckedIndexedAccess`) · Tailwind v4 · pnpm ·
@@ -40,12 +45,14 @@ Node ≥ 22 · ESLint (next + jsx-a11y strict) · Prettier · Playwright + @axe-
 ```bash
 pnpm install
 pnpm dev                      # http://localhost:3000
-pnpm lint && pnpm lint:tokens && pnpm format:check && pnpm typecheck
+pnpm lint && pnpm lint:tokens && pnpm format:check && pnpm typecheck && pnpm test
 pnpm build && pnpm test:e2e   # e2e runs against the production build
 ./scripts/check-registry.sh   # components still match @eq
 ```
 
 ## Working agreements
 
-- Small steps, logical commits, a summary after each stage. One PR per stage; merge on green CI.
+- Small steps, logical commits, a summary after each stage. One PR per stage.
+- **Merge on green CI — standing approval.** When every check on the PR's latest commit is green and
+  there is no merge conflict, merge it (merge commit) without waiting for a separate go-ahead.
 - Code, UI copy and docs in English.
