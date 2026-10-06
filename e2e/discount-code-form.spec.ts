@@ -197,7 +197,11 @@ test.describe("edit code", () => {
     await openAdd(page)
     for (let i = 0; i < 25; i++) {
       await page.keyboard.press("Tab")
-      expect(await panel(page).evaluate((el) => el.contains(document.activeElement))).toBe(true)
+      // Wrapping from the last element passes through Base UI's focus guard, which moves focus back
+      // into the panel on the next task — poll instead of reading activeElement once.
+      await expect
+        .poll(() => panel(page).evaluate((el) => el.contains(document.activeElement)))
+        .toBe(true)
     }
   })
 })
