@@ -144,7 +144,7 @@ test.describe("side panel", () => {
 })
 
 test.describe("approve", () => {
-  test("own items replace the demo data and Welcome shows what's in the system", async ({
+  test("own items replace the demo data; settings come next, Welcome shows what's in", async ({
     page,
   }) => {
     await open(page, URL)
@@ -159,6 +159,9 @@ test.describe("approve", () => {
     await expect(dialog).toContainText("including the 3 demo examples")
     await dialog.getByRole("button", { name: "Approve and replace demo" }).click()
 
+    await expect(page).toHaveURL(/\/welcome\/setup\/settings$/)
+    await expect(page.getByText("Step 4 of 5 · Settings")).toBeVisible()
+    await page.getByRole("link", { name: "I'll finish later" }).click()
     await expect(page).toHaveURL(/\/welcome$/)
     await expect(page.getByText("1 category · 14 units · demo data removed")).toBeVisible()
     await expect(

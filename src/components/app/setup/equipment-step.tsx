@@ -23,7 +23,7 @@ import { Card } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/sonner"
-import { WELCOME_HREF } from "@/config/navigation"
+import { SETUP_SETTINGS_HREF } from "@/config/navigation"
 import {
   assignCodes,
   codeRange,
@@ -235,7 +235,7 @@ export function EquipmentStep() {
         onConfirm={async () => {
           await onboardingService.importEquipment()
           toast.success("Your equipment is in the system")
-          router.push(WELCOME_HREF)
+          router.push(SETUP_SETTINGS_HREF)
         }}
       />
     </>

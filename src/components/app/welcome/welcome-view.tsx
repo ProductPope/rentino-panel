@@ -10,7 +10,12 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/sonner"
-import { BOOKING_PAGE_HREF, SETUP_PROGRESS_HREF, SETUP_SOURCES_HREF } from "@/config/navigation"
+import {
+  BOOKING_PAGE_HREF,
+  SETUP_PROGRESS_HREF,
+  SETUP_SETTINGS_HREF,
+  SETUP_SOURCES_HREF,
+} from "@/config/navigation"
 import {
   importedSummary,
   importedTitle,
@@ -34,8 +39,8 @@ type Load =
 const errorMessage = (err: unknown) =>
   err instanceof Error && err.message ? err.message : "Something went wrong. Try again."
 
-/** Wizard steps not built yet (stages 3–4). */
-const WIZARD_ACTIONS: WelcomeAction[] = ["review_draft", "finish_settings"]
+/** Wizard steps not built yet (reviewing a prepared draft). */
+const WIZARD_ACTIONS: WelcomeAction[] = ["review_draft"]
 
 /** How often state B checks whether the draft is ready (the card updates by itself). */
 const POLL_MS = 2000
@@ -51,6 +56,7 @@ function handleAction(action: WelcomeAction) {
 const HREFS: Partial<Record<WelcomeAction, string>> = {
   send_sources: SETUP_SOURCES_HREF,
   show_progress: SETUP_PROGRESS_HREF,
+  finish_settings: SETUP_SETTINGS_HREF,
   booking_page: BOOKING_PAGE_HREF,
 }
 const hrefFor = (action: WelcomeAction) => HREFS[action]
