@@ -1,50 +1,96 @@
 name: CI
 
+# One job, so dependencies are installed and the app is built once (every job is billed rounded up
+# to a full minute). What may be skipped is decided by .github/scripts/ci-decide.sh — see
+# .github/CI.md. Any doubt there means a full run; a manual run is always a full run.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  checks:
-    name: Lint, typecheck, unit tests, build
+  ci:
+    name: Lint, typecheck, unit tests, build, E2E (axe WCAG 2.2 AA, keyboard)
+    # Draft PRs get no CI; it runs when the PR is marked ready for review.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+      WORKFLOW_PATH: .github/workflows/ci.yml
+      E2E_IGNORE_RE: '^(docs/|\.changeset/|[^/]+\.md$)'
+      REGISTRY_RE: '^(src/components/(ui|eq)/|src/hooks/|src/lib/utils\.ts$|components\.json$)'
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm lint:tokens
-      - run: pnpm format:check
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
+          fetch-depth: 2 # HEAD^1 = the base, for the diff scope
 
-  e2e:
-    name: E2E (axe WCAG 2.2 AA, keyboard)
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      # On main: the merge commit's tree already passed in its PR → nothing left to prove.
+      - id: reuse
+        run: .github/scripts/ci-decide.sh reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - id: scope
+        if: steps.reuse.outputs.reuse != 'true'
+        run: .github/scripts/ci-decide.sh scope
+
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: pnpm/action-setup@v4
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm build
-      - run: pnpm test:e2e
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm lint
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm lint:tokens
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm format:check
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm typecheck
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm test
+      - if: steps.reuse.outputs.reuse != 'true'
+        name: CI decision script tests
+        run: .github/scripts/ci-decide.test.sh
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm build
+
+      - if: steps.scope.outputs.e2e == 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - if: steps.scope.outputs.e2e == 'true'
+        run: pnpm test:e2e
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() && steps.scope.outputs.e2e == 'true'
         with:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+      # Last: re-installs @eq items, so it must not change what the steps above tested.
+      - if: steps.scope.outputs.registry == 'true'
+        name: Components match @eq registry
+        run: ./scripts/check-registry.sh
+
+      # A green PR run records its merge-commit tree; the push to main after merging looks it up.
+      - if: success() && github.event_name == 'pull_request'
+        run: echo "${{ github.run_id }}" > ci-tree.txt
+      - if: success() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-tree-${{ steps.reuse.outputs.tree }}
+          path: ci-tree.txt
+          retention-days: 14
