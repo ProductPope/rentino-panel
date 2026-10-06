@@ -108,6 +108,8 @@ export interface OnboardingService {
   removeEquipment(id: string): Promise<void>
   /** Step 4: save the rental terms. Needs the VAT rate confirmed; marks the settings done. */
   saveSettings(settings: RentalSettings): Promise<OnboardingStatus>
+  /** Step 5: connect a payment account (Stripe Connect; simulated). */
+  connectPayments(): Promise<OnboardingStatus>
   /**
    * Approve the equipment added by hand: it replaces the demo data (demo examples are dropped).
    * Fails without at least one item of the customer's own.

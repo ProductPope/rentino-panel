@@ -5,6 +5,7 @@ import type { OnboardingService } from "./types"
 export * from "./equipment"
 export * from "./rules"
 export * from "./settings"
+export * from "./start"
 export * from "./types"
 
 /** The onboarding service the app uses. Swap the mock for a real implementation here. */

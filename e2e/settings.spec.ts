@@ -59,13 +59,15 @@ test.describe("step 4 — settings", () => {
     await expect(page.getByText("Enter a whole number from 1 to 99.")).toBeVisible()
   })
 
-  test("confirming VAT and saving finishes the settings on Welcome", async ({ page }) => {
+  test("confirming VAT and saving leads to step 5 and finishes the settings", async ({ page }) => {
     await open(page, URL)
     await vat(page).check()
     await expect(tile(page, "Taxes and fees")).toContainText("Confirmed")
     await page.getByRole("radio", { name: "No, pickup only" }).check()
     await save(page)
-    await expect(page).toHaveURL(/\/welcome$/)
+    await expect(page).toHaveURL(/\/welcome\/setup\/start$/)
+    await expect(page.getByText("Step 5 of 5 · Start")).toBeVisible()
+    await page.goto("/welcome")
     await expect(
       page.getByRole("heading", {
         name: "Your equipment, price lists and rental terms are in the system",
