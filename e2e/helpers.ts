@@ -3,6 +3,13 @@ import { expect, type Page } from "@playwright/test"
 
 /** Every route of the app. Add new pages here: each gets axe, keyboard and reflow checks. */
 export const PAGES = [
+  { name: "Welcome — A, send your details", path: "/welcome" },
+  { name: "Welcome — B, preparing", path: "/welcome?mock=processing" },
+  { name: "Welcome — B, preparing (long)", path: "/welcome?mock=processing-long" },
+  { name: "Welcome — C, draft ready", path: "/welcome?mock=draft-ready" },
+  { name: "Welcome — D, imported", path: "/welcome?mock=imported" },
+  { name: "Welcome — D, settings and payments done", path: "/welcome?mock=imported-paid" },
+  { name: "Welcome — load error", path: "/welcome?mock=error" },
   { name: "Discount codes", path: "/settings/discount-codes" },
   { name: "Discount codes — empty", path: "/settings/discount-codes?mock=empty" },
   { name: "Discount codes — load error", path: "/settings/discount-codes?mock=error" },
