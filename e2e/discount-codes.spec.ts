@@ -115,12 +115,17 @@ test.describe("row actions", () => {
     await trigger.focus()
     await page.keyboard.press("Enter")
     const menu = page.getByRole("menu")
-    await expect(menu.getByRole("menuitem")).toHaveText(["Copy code", "Activate", "Delete…"])
+    await expect(menu.getByRole("menuitem")).toHaveText([
+      "Edit",
+      "Copy code",
+      "Activate",
+      "Delete…",
+    ])
     await page.keyboard.press("Escape")
     await expect(trigger).toBeFocused()
 
     const used = await openActions(page, "WELCOME50")
-    await expect(used.getByRole("menuitem")).toHaveText(["Copy code", "Deactivate…"])
+    await expect(used.getByRole("menuitem")).toHaveText(["Edit", "Copy code", "Deactivate…"])
   })
 
   test("Deactivate confirms first, then can be undone from the toast", async ({ page }) => {

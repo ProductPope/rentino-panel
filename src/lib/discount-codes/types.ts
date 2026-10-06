@@ -40,8 +40,18 @@ export class DiscountCodeError extends Error {
   }
 }
 
+/** What an admin can set. `uses`, ids and timestamps are the backend's. */
+export type DiscountCodeInput = Pick<
+  DiscountCode,
+  "code" | "type" | "value" | "validFrom" | "validTo" | "active" | "description"
+>
+
 export interface DiscountCodeRepository {
   list(): Promise<DiscountCode[]>
+  /** Rejects with `duplicate_code` when the code exists (case-insensitive). */
+  create(input: DiscountCodeInput): Promise<DiscountCode>
+  /** Rejects with `duplicate_code`, or `in_use` when changing the text of a used code. */
+  update(id: string, input: DiscountCodeInput): Promise<DiscountCode>
   /** Turn a code on or off; returns the updated code. */
   setActive(id: string, active: boolean): Promise<DiscountCode>
   /** Delete an unused code. Rejects with `in_use` when the code was used. */

@@ -1,9 +1,11 @@
 import {
   DiscountCodeError,
   type DiscountCode,
+  type DiscountCodeInput,
   type DiscountCodeRepository,
 } from "@/lib/discount-codes/types"
-import { today } from "@/lib/tenant"
+import { isDuplicateCode } from "@/lib/discount-codes/validation"
+import { isoDate } from "@/lib/tenant"
 
 import { mockAuditLog } from "./audit-log"
 import { delay, mockScenario, persisted } from "./scenario"
@@ -15,7 +17,7 @@ const ACTOR = "Anna Nowak"
 function inDays(days: number) {
   const date = new Date()
   date.setDate(date.getDate() + days)
-  return today(date)
+  return isoDate(date)
 }
 
 function seed(): DiscountCode[] {
@@ -91,7 +93,8 @@ function seed(): DiscountCode[] {
       code: "KAYAK5",
       type: "fixed",
       value: 5,
-      validTo: inDays(30),
+      validFrom: inDays(200),
+      validTo: inDays(290),
       active: false,
       description: "Draft for the kayak season",
       uses: 0,
@@ -109,6 +112,18 @@ function find(id: string) {
   return code
 }
 
+function assertUnique(input: DiscountCodeInput, ownId?: string) {
+  if (isDuplicateCode(input.code, store.read(), ownId))
+    throw new DiscountCodeError(
+      "duplicate_code",
+      `A code “${input.code}” already exists. Choose another one.`
+    )
+}
+
+/** Optional fields set to `undefined` are removed, so JSON storage matches what came in. */
+const clean = <T extends object>(value: T) =>
+  Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T
+
 export const mockDiscountCodeRepository: DiscountCodeRepository = {
   async list() {
     const scenario = mockScenario()
@@ -118,6 +133,51 @@ export const mockDiscountCodeRepository: DiscountCodeRepository = {
       throw new DiscountCodeError("unavailable", "The server didn't respond. Try again.")
     if (scenario === "empty") return []
     return store.read()
+  },
+
+  async create(input) {
+    await delay()
+    assertUnique(input)
+    const at = new Date().toISOString()
+    const created = clean<DiscountCode>({
+      ...input,
+      id: `dc-${crypto.randomUUID()}`,
+      uses: 0,
+      createdAt: at,
+      updatedAt: at,
+    })
+    store.write([created, ...store.read()])
+    await mockAuditLog.record({
+      actor: ACTOR,
+      action: "Created",
+      subject: `Discount code ${created.code}`,
+    })
+    return created
+  },
+
+  async update(id, input) {
+    await delay()
+    const current = find(id)
+    assertUnique(input, id)
+    if (current.uses > 0 && input.code !== current.code)
+      throw new DiscountCodeError(
+        "in_use",
+        `${current.code} was used on ${current.uses} orders, so its code can't change.`
+      )
+    const updated = clean<DiscountCode>({
+      ...input,
+      id,
+      uses: current.uses,
+      createdAt: current.createdAt,
+      updatedAt: new Date().toISOString(),
+    })
+    store.write(store.read().map((c) => (c.id === id ? updated : c)))
+    await mockAuditLog.record({
+      actor: ACTOR,
+      action: "Edited",
+      subject: `Discount code ${updated.code}`,
+    })
+    return updated
   },
 
   async setActive(id, active) {
