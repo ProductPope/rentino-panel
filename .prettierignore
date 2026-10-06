@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+.next/
+playwright-report/
+test-results/
+# Installed from the @eq registry (EQ-librium) — kept byte-for-byte as published.
+src/components/ui/
+src/components/eq/
+src/hooks/
+src/lib/utils.ts
+src/app/globals.css
