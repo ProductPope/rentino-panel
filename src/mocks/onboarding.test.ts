@@ -140,3 +140,25 @@ describe("rental settings", () => {
     expect((await mockOnboardingService.getStatus()).settings.payMode).toBe("full")
   })
 })
+
+describe("payments", () => {
+  it("connect only after import; then the checklist drops the step", async () => {
+    visit("?mock=reset")
+    await mockOnboardingService.getStatus()
+    vi.unstubAllGlobals()
+    await expect(mockOnboardingService.connectPayments()).rejects.toMatchObject({
+      reason: "not_imported",
+    })
+    visit("?mock=imported")
+    expect(await mockOnboardingService.connectPayments()).toMatchObject({
+      paymentsConnected: true,
+    })
+  })
+})
+
+describe("forced states", () => {
+  it("settings done implies a confirmed VAT rate", async () => {
+    visit("?mock=imported-settings")
+    expect((await mockOnboardingService.getStatus()).settings.vatConfirmed).toBe(true)
+  })
+})

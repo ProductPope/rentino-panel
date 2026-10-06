@@ -31,6 +31,13 @@ const SCENARIOS = {
 
 type OnboardingScenario = keyof typeof SCENARIOS
 
+/** A forced state over the stored one. "Settings done" implies a confirmed VAT rate. */
+function withScenario(status: OnboardingStatus, forced: OnboardingScenario | null) {
+  if (!forced) return status
+  const next: OnboardingStatus = { ...status, ...SCENARIOS[forced] }
+  return next.settingsDone ? { ...next, settings: { ...next.settings, vatConfirmed: true } } : next
+}
+
 function onboardingScenario(): OnboardingScenario | null {
   if (typeof window === "undefined") return null
   const value = new URLSearchParams(window.location.search).get("mock")
@@ -153,7 +160,7 @@ export const mockOnboardingService: OnboardingService = {
     if (scenario === "error")
       throw new OnboardingError("unavailable", "The server didn't respond. Try again.")
     const forced = onboardingScenario()
-    return forced ? { ...current(), ...SCENARIOS[forced] } : current()
+    return withScenario(current(), forced)
   },
 
   async submitSources(input) {
@@ -201,12 +208,24 @@ export const mockOnboardingService: OnboardingService = {
     await delay()
     // A forced demo state counts as the current one, so `?mock=imported` can save too.
     const forced = onboardingScenario()
-    const status = forced ? { ...store.read(), ...SCENARIOS[forced] } : store.read()
+    const status = withScenario(store.read(), forced)
     if (status.stage !== "imported")
       throw new OnboardingError("not_imported", "Approve your equipment first.")
     if (!settings.vatConfirmed)
       throw new OnboardingError("vat_not_confirmed", "Confirm the VAT rate to continue.")
     const next: OnboardingStatus = { ...status, settings, settingsDone: true }
+    store.write(next)
+    return next
+  },
+
+  async connectPayments() {
+    await delay()
+    const forced = onboardingScenario()
+    const status = withScenario(store.read(), forced)
+    if (status.stage !== "imported")
+      throw new OnboardingError("not_imported", "Approve your equipment first.")
+    // A backend would hand over to Stripe Connect and come back; the prototype just connects.
+    const next: OnboardingStatus = { ...status, paymentsConnected: true }
     store.write(next)
     return next
   },
