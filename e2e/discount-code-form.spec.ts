@@ -167,6 +167,8 @@ test.describe("edit code", () => {
     await open(page, URL)
     await openEdit(page, "WELCOME50")
     await expect(field(page, "Code")).toHaveAttribute("readonly", "")
+    // The panel skips the read-only Code and focuses the first editable field.
+    await expect(field(page, "Value")).toBeFocused()
     await expect(field(page, "Code")).toHaveAccessibleDescription(/can't change/)
     await page.keyboard.press("Escape")
 

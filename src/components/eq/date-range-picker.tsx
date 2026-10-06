@@ -28,13 +28,16 @@ export type DateRangePickerProps = DateRangePickerOwnProps &
   Omit<React.ComponentProps<"button">, keyof DateRangePickerOwnProps | "children" | "value">
 
 function formatRange(range: DateRange | undefined, locale: string | undefined) {
-  if (!range?.from) return null
   const format = new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "short",
     year: "numeric",
   })
-  return range.to ? format.formatRange(range.from, range.to) : format.format(range.from)
+  if (range?.from && range.to) return format.formatRange(range.from, range.to)
+  // Open-ended ranges say which end is open, so a start date never reads as a single day.
+  if (range?.from) return `From ${format.format(range.from)}`
+  if (range?.to) return `Until ${format.format(range.to)}`
+  return null
 }
 
 /**
@@ -92,14 +95,14 @@ function DateRangePicker({
           numberOfMonths={numberOfMonths}
           selected={value}
           onSelect={onValueChange}
-          defaultMonth={value?.from}
+          defaultMonth={value?.from ?? value?.to}
         />
         <div className="flex items-center justify-between gap-2 border-t border-border p-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onValueChange(undefined)}
-            disabled={!value?.from}
+            disabled={!value?.from && !value?.to}
           >
             Clear
           </Button>
