@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 
 import type { AppShellNavGroup } from "@/components/eq/app-shell"
+import { can, type SessionUser } from "@/lib/session/types"
 
 export const DISCOUNT_CODES_HREF = "/settings/discount-codes"
 
@@ -66,3 +67,16 @@ export const NAVIGATION: AppShellNavGroup[] = [
     ],
   },
 ]
+
+/** Navigation as `user` sees it: Discount codes needs "Manage discount codes" (WHLZ-566 §5). */
+export function navigationFor(user: Pick<SessionUser, "permissions">): AppShellNavGroup[] {
+  if (can(user, "discount_codes.manage")) return NAVIGATION
+  return NAVIGATION.map((group) => ({
+    ...group,
+    items: group.items.map((item) =>
+      item.children
+        ? { ...item, children: item.children.filter((c) => c.href !== DISCOUNT_CODES_HREF) }
+        : item
+    ),
+  }))
+}

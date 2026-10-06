@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation"
 import type * as React from "react"
 
 import { AppShell } from "@/components/eq/app-shell"
-import { NAVIGATION } from "@/config/navigation"
-import type { SessionUser } from "@/lib/session"
+import { navigationFor } from "@/config/navigation"
+import type { SessionUser } from "@/lib/session/types"
 
 import { RentinoBrand } from "./rentino-brand"
 import { SidebarFooterContent } from "./sidebar-footer"
@@ -25,7 +25,7 @@ export function AdminShell({
   return (
     <AppShell
       brand={<RentinoBrand />}
-      navigation={NAVIGATION}
+      navigation={navigationFor(user)}
       currentHref={pathname}
       defaultCollapsed={defaultCollapsed}
       renderLink={(item) => <Link href={item.href} />}

@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
 import { toast } from "@/components/ui/sonner"
-import { sessionService, type SessionUser } from "@/lib/session"
+import { signOut } from "@/app/actions/session"
+import type { SessionUser } from "@/lib/session/types"
 
 const THEMES = [
   { value: "light", label: "Light", icon: SunIcon },
@@ -77,7 +78,7 @@ export function AccountMenu({ user }: { user: SessionUser }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={async () => {
-                await sessionService.signOut()
+                await signOut()
                 toast.info("Signed out", { description: "This demo has no sign-in yet." })
               }}
             >
