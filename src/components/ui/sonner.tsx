@@ -18,11 +18,15 @@ import {
 /**
  * Toast region. Mount once, near the root of the app. Colours come from the `popover` surface,
  * so toasts follow whichever theme (`.dark` / `.light`) the region sits in.
+ *
+ * Top centre by default: bottom-right covers the actions of an EditPanel footer (Save) and
+ * bottom-left crowds the sidebar footer.
  */
 function Toaster({ ...props }: ToasterProps) {
   return (
     <Sonner
       className="toaster group"
+      position="top-center"
       closeButton
       icons={{
         success: <CircleCheckIcon className="size-4 text-success-text" aria-hidden="true" />,
@@ -49,6 +53,9 @@ function Toaster({ ...props }: ToasterProps) {
           toast: "font-sans shadow-lg",
           title: "font-medium text-foreground",
           description: "text-foreground-secondary!",
+          // 24px target (WCAG 2.5.8; sonner draws 20px), token hover and focus ring.
+          closeButton:
+            "size-6! hover:border-border! hover:bg-accent! hover:text-accent-foreground! focus-visible:outline-2! focus-visible:outline-offset-2! focus-visible:outline-ring! focus-visible:outline-solid! [&_svg]:size-3.5",
         },
       }}
       {...props}

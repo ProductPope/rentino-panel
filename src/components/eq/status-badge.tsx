@@ -32,6 +32,12 @@ export const STATUS_MAP = {
     pending: { tone: "info", label: "Pending" },
     refunded: { tone: "secondary", label: "Refunded" },
   },
+  discountCode: {
+    active: { tone: "success", label: "Active" },
+    scheduled: { tone: "info", label: "Scheduled" },
+    expired: { tone: "secondary", label: "Expired" },
+    inactive: { tone: "outline", label: "Inactive" },
+  },
 } as const satisfies Record<string, Record<string, { tone: Tone; label: string }>>
 
 export type StatusDomain = keyof typeof STATUS_MAP

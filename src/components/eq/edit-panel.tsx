@@ -6,6 +6,16 @@ import * as React from "react"
 
 import { ViewSwitch } from "@/components/eq/view-switch"
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -50,8 +60,33 @@ export interface EditPanelProps {
   onSizeChange?: (size: EditPanelSize) => void
   /** Actions, secondary first: `<Button variant="outline">Save and stay</Button><Button>Save</Button>`. */
   footer: React.ReactNode
+  /**
+   * The form has unsaved changes. Closing the panel by Escape, the close button or a click
+   * outside then asks “Discard changes?” first. Closing it yourself (after Save) never asks.
+   */
+  dirty?: boolean
+  /** Wording of the discard question. */
+  discardText?: Partial<EditPanelDiscardText>
   /** Usually `EditPanelSection`s with `EditPanelFields`. */
   children: React.ReactNode
+}
+
+export interface EditPanelDiscardText {
+  /** @defaultValue "Discard changes?" */
+  title: string
+  /** @defaultValue "What you entered in this panel will be lost." */
+  description: string
+  /** @defaultValue "Keep editing" */
+  keep: string
+  /** @defaultValue "Discard" */
+  discard: string
+}
+
+const DISCARD_TEXT: EditPanelDiscardText = {
+  title: "Discard changes?",
+  description: "What you entered in this panel will be lost.",
+  keep: "Keep editing",
+  discard: "Discard",
 }
 
 /**
@@ -69,8 +104,15 @@ function EditPanel({
   defaultSize = "narrow",
   onSizeChange,
   footer,
+  dirty = false,
+  discardText,
   children,
 }: EditPanelProps) {
+  const [openState, setOpenState] = React.useState(false)
+  const isOpen = open ?? openState
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const keepRef = React.useRef<HTMLButtonElement>(null)
+  const text = { ...DISCARD_TEXT, ...discardText }
   const [sizeState, setSizeState] = React.useState<EditPanelSize>(defaultSize)
   const size = sizeProp ?? sizeState
   const bodyRef = React.useRef<HTMLDivElement>(null)
@@ -80,8 +122,22 @@ function EditPanel({
     onSizeChange?.(next)
   }
 
+  const setOpen = (next: boolean) => {
+    setOpenState(next)
+    onOpenChange?.(next)
+  }
+
+  // A user-initiated close (Escape, close button, outside click) on a dirty form asks first.
+  const requestOpenChange = (next: boolean) => {
+    if (!next && dirty) {
+      setConfirmOpen(true)
+      return
+    }
+    setOpen(next)
+  }
+
   return (
-    <Sheet {...(open !== undefined ? { open } : {})} onOpenChange={onOpenChange}>
+    <Sheet open={isOpen} onOpenChange={requestOpenChange}>
       {trigger && <SheetTrigger render={trigger} />}
       <SheetContent
         side="right"
@@ -116,6 +172,26 @@ function EditPanel({
         >
           {footer}
         </SheetFooter>
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent data-slot="edit-panel-discard" initialFocus={keepRef}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{text.title}</AlertDialogTitle>
+              <AlertDialogDescription>{text.description}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel ref={keepRef}>{text.keep}</AlertDialogCancel>
+              <Button
+                variant="destructive-solid"
+                onClick={() => {
+                  setConfirmOpen(false)
+                  setOpen(false)
+                }}
+              >
+                {text.discard}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SheetContent>
     </Sheet>
   )

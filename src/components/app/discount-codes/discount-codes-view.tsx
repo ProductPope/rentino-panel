@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/eq/confirm-dialog"
 import { DataTable, dataTableColumns } from "@/components/eq/data-table"
 import { EmptyState } from "@/components/eq/empty-state"
 import { PageHeader } from "@/components/eq/page-header"
+import { StatusBadge } from "@/components/eq/status-badge"
 import {
   FilterField,
   FilterPanel,
@@ -21,7 +22,7 @@ import {
   ToolbarActions,
   ToolbarSearch,
 } from "@/components/eq/toolbar"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/sonner"
 import {
@@ -38,7 +39,6 @@ import {
 } from "@/lib/discount-codes"
 
 import { DiscountCodePanel } from "./discount-code-panel"
-import { DiscountStatusBadge } from "./discount-status-badge"
 import { FilterSelect, type FilterOption } from "./filter-select"
 import { RowActions, type RowAction } from "./row-actions"
 
@@ -191,7 +191,7 @@ export function DiscountCodesView() {
       col.display({
         id: "status",
         header: "Status",
-        cell: (info) => <DiscountStatusBadge status={statusOf(info.row.original)} />,
+        cell: (info) => <StatusBadge domain="discountCode" status={statusOf(info.row.original)} />,
       }),
       col.display({
         id: "actions",
@@ -246,17 +246,13 @@ export function DiscountCodesView() {
         <Alert variant="destructive" announce="assertive">
           <TriangleAlertIcon aria-hidden="true" />
           <AlertTitle>Discount codes couldn&apos;t be loaded</AlertTitle>
-          <AlertDescription>
-            <p>{load.message}</p>
-            {/* Below the text, not in AlertAction: AlertAction overlaps the title at 320–375px
-                (reported to EQ-librium). */}
-            <div>
-              <Button size="sm" variant="outline" onClick={() => void fetchCodes()}>
-                <RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
-                Try again
-              </Button>
-            </div>
-          </AlertDescription>
+          <AlertDescription>{load.message}</AlertDescription>
+          <AlertAction>
+            <Button size="sm" variant="outline" onClick={() => void fetchCodes()}>
+              <RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
+              Try again
+            </Button>
+          </AlertAction>
         </Alert>
       ) : (
         <>
