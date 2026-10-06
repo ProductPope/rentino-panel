@@ -80,8 +80,8 @@ test.describe("navigation", () => {
       "aria-current",
       "page"
     )
-    // Only the live section is a link; everything else is announced as coming soon.
-    await expect(nav.getByRole("link")).toHaveCount(1)
+    // Only live sections are links; everything else is announced as coming soon.
+    await expect(nav.getByRole("link")).toHaveText(["Welcome", "Discount codes"])
     for (const label of ["Orders", "Tax"]) {
       await expect(
         nav.getByRole("listitem").filter({ hasText: new RegExp(`^${label}`) })
@@ -98,10 +98,10 @@ test.describe("navigation", () => {
     expect(stops.filter((s) => /coming soon|Orders|Dashboard|Tax/.test(s))).toEqual([])
   })
 
-  test("/ opens Discount codes", async ({ page }) => {
+  test("/ opens Welcome", async ({ page }) => {
     await page.goto("/")
-    await expect(page).toHaveURL(/\/settings\/discount-codes$/)
-    await expect(page.getByRole("heading", { level: 1, name: "Discount codes" })).toBeVisible()
+    await expect(page).toHaveURL(/\/welcome$/)
+    await expect(page.getByRole("heading", { level: 1, name: "Welcome to Rentino" })).toBeVisible()
   })
 
   test("Ctrl+B collapses the sidebar and the choice survives a reload", async ({ page }) => {
