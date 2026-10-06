@@ -35,4 +35,26 @@ describe("mock discount code repository", () => {
   it("reports a missing code", async () => {
     await expect(repo.setActive("nope", true)).rejects.toMatchObject({ reason: "not_found" })
   })
+
+  it("creates a code, unique case-insensitively, and records it", async () => {
+    const input = { code: "AUTUMN10", type: "percentage" as const, value: 10, active: true }
+    const created = await repo.create(input)
+    expect(created).toMatchObject({ ...input, uses: 0 })
+    expect((await repo.list())[0]?.id).toBe(created.id)
+    expect((await mockAuditLog.list())[0]).toMatchObject({ action: "Created" })
+    await expect(repo.create({ ...input, code: "WELCOME50" })).rejects.toMatchObject({
+      reason: "duplicate_code",
+    })
+  })
+
+  it("edits a code but never the text of a used one", async () => {
+    const used = (await repo.list()).find((c) => c.code === "WELCOME50")!
+    const edited = await repo.update(used.id, { ...used, value: 60, description: undefined })
+    expect(edited).toMatchObject({ value: 60, uses: used.uses })
+    expect(edited).not.toHaveProperty("description")
+    expect((await mockAuditLog.list())[0]).toMatchObject({ action: "Edited" })
+    await expect(repo.update(used.id, { ...used, code: "WELCOME60" })).rejects.toMatchObject({
+      reason: "in_use",
+    })
+  })
 })

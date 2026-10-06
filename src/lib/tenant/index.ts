@@ -15,8 +15,8 @@ export function formatMoney(amount: number, settings: TenantSettings = tenant) {
   }).format(amount)
 }
 
-/** Today as `YYYY-MM-DD` in local time — the format of every date-only field. */
-export function today(now = new Date()) {
+/** A date as `YYYY-MM-DD` in local time — the format of every date-only field. */
+export function isoDate(now: Date) {
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
@@ -28,3 +28,6 @@ export function formatDate(isoDate: string, settings: TenantSettings = tenant) {
     year: "numeric",
   }).format(new Date(`${isoDate}T00:00:00`))
 }
+
+/** Today as `YYYY-MM-DD` in local time. */
+export const today = () => isoDate(new Date())
