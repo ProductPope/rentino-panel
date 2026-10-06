@@ -21,6 +21,9 @@ import type { AppShellNavGroup } from "@/components/eq/app-shell"
 import { can, type SessionUser } from "@/lib/session/types"
 
 export const WELCOME_HREF = "/welcome"
+/** Setup wizard (full screen, outside the admin shell). */
+export const SETUP_SOURCES_HREF = "/welcome/setup/sources"
+export const SETUP_PROGRESS_HREF = "/welcome/setup/progress"
 export const DISCOUNT_CODES_HREF = "/settings/discount-codes"
 export const BOOKING_PAGE_HREF = "/booking-page"
 
