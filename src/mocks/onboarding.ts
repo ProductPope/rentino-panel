@@ -36,6 +36,23 @@ function onboardingScenario(): OnboardingScenario | null {
   return value && value in SCENARIOS ? (value as OnboardingScenario) : null
 }
 
+/**
+ * Preparing the draft, simulated (a backend would report it): a step is done every
+ * `STEP_MS` until "Checking seasonal price lists", then the draft is ready after `READY_MS`
+ * — the moment the customer would get the email.
+ */
+export const SIMULATION = { STEP_MS: 1100, LAST_RUNNING_STEP: 3, READY_MS: 15_000 }
+
+export function simulatedProgress(elapsedMs: number) {
+  if (elapsedMs >= SIMULATION.READY_MS)
+    return { ready: true, activeStep: SIMULATION.LAST_RUNNING_STEP }
+  const activeStep = Math.min(
+    Math.floor(elapsedMs / SIMULATION.STEP_MS),
+    SIMULATION.LAST_RUNNING_STEP
+  )
+  return { ready: false, activeStep }
+}
+
 function seed(): OnboardingStatus {
   return {
     stage: "awaiting_input",
@@ -44,6 +61,7 @@ function seed(): OnboardingStatus {
       city: "Palma de Mallorca",
       website: "bikesmallorca.com",
       priceListFile: "price-list-2026.pdf",
+      email: "marek@bikesmallorca.com",
     },
     processing: { activeStep: 3, long: false },
     draft: { categories: 3, units: 26, addons: 2, openDecisions: 1 },
@@ -55,6 +73,21 @@ function seed(): OnboardingStatus {
 
 const store = persisted<OnboardingStatus>("rentino.mock.onboarding", seed)
 
+/** The stored status, with preparing advanced to now (and finished when it's time). */
+function current(now = Date.now()): OnboardingStatus {
+  const status = store.read()
+  const { submittedAt } = status.processing
+  if (status.stage !== "processing" || !submittedAt) return status
+  const progress = simulatedProgress(now - Date.parse(submittedAt))
+  const next: OnboardingStatus = {
+    ...status,
+    stage: progress.ready ? "draft_ready" : "processing",
+    processing: { ...status.processing, activeStep: progress.activeStep },
+  }
+  if (progress.ready) store.write(next)
+  return next
+}
+
 export const mockOnboardingService: OnboardingService = {
   async getStatus() {
     const scenario = mockScenario()
@@ -63,6 +96,24 @@ export const mockOnboardingService: OnboardingService = {
     if (scenario === "error")
       throw new OnboardingError("unavailable", "The server didn't respond. Try again.")
     const forced = onboardingScenario()
-    return forced ? { ...store.read(), ...SCENARIOS[forced] } : store.read()
+    return forced ? { ...current(), ...SCENARIOS[forced] } : current()
+  },
+
+  async submitSources(input) {
+    await delay()
+    const status = store.read()
+    const next: OnboardingStatus = {
+      ...status,
+      stage: "processing",
+      account: {
+        ...status.account,
+        ...(input.kind === "website"
+          ? { website: input.website.trim(), priceListFile: undefined }
+          : { priceListFile: input.fileName }),
+      },
+      processing: { submittedAt: new Date().toISOString(), activeStep: 0, long: false },
+    }
+    store.write(next)
+    return next
   },
 }

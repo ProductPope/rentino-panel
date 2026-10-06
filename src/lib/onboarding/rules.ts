@@ -1,4 +1,39 @@
-import type { DraftSummary, OnboardingAccount, OnboardingStatus } from "./types"
+import type { DraftSummary, OnboardingAccount, OnboardingStatus, SourcesInput } from "./types"
+
+/** The setup wizard's steps, in order. The wizard shows "Step N of 5 · <name>". */
+export const SETUP_STEPS = [
+  "Your details",
+  "Preparing",
+  "Equipment and prices",
+  "Settings",
+  "Start",
+] as const
+
+export type SourceKind = SourcesInput["kind"]
+
+/** Step 1 validation: the chosen source must be filled in. Returns the error to show at the field. */
+export function sourcesError(kind: SourceKind, website: string, fileName: string | undefined) {
+  if (kind === "website") return website.trim() ? undefined : "Enter your website address."
+  return fileName ? undefined : "Add your price list file."
+}
+
+/** File size for people: "240 KB", "1.2 MB". */
+export function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export type ProcessingRowState = "done" | "active" | "pending"
+
+/** The processing list of step 2: steps before the active one are done, after it pending. */
+export function processingRows(status: Pick<OnboardingStatus, "account" | "processing">) {
+  const steps = processingSteps(status.account)
+  const active = Math.min(Math.max(status.processing.activeStep, 0), steps.length - 1)
+  return steps.map((label, i) => ({
+    label,
+    state: (i < active ? "done" : i === active ? "active" : "pending") as ProcessingRowState,
+  }))
+}
 
 /** What a Welcome step's button does. The page maps each action to a route or a message. */
 export type WelcomeAction =
