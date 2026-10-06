@@ -47,5 +47,7 @@ pnpm build && pnpm test:e2e   # e2e runs against the production build
 
 ## Working agreements
 
-- Small steps, logical commits, a summary after each stage. One PR per stage; merge on green CI.
+- Small steps, logical commits, a summary after each stage. One PR per stage.
+- **Merge on green CI — standing approval.** When every check on the PR's latest commit is green and
+  there is no merge conflict, merge it (merge commit) without waiting for a separate go-ahead.
 - Code, UI copy and docs in English.
