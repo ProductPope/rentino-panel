@@ -23,7 +23,7 @@ test.describe("before import (A–C)", () => {
     await expect(page.getByText(/Get started in a few steps/)).toBeVisible()
     await expect(page.getByText("0 of 3 steps done")).toBeAttached()
     await expect(steps(page)).toHaveCount(3)
-    await expect(steps(page).nth(0)).toContainText("Send us your details")
+    await expect(steps(page).nth(0)).toContainText("Add your equipment")
     await expect(steps(page).nth(1)).toContainText("Make a test booking")
     await expect(steps(page).nth(1)).toContainText("Demo data")
     await expect(steps(page).nth(2)).toContainText("View your booking page")
@@ -47,9 +47,9 @@ test.describe("before import (A–C)", () => {
     await expect(steps(page).nth(0)).toContainText("1 item needs your decision")
   })
 
-  test("A: sending your details opens the setup wizard", async ({ page }) => {
+  test("A: adding equipment opens the setup wizard", async ({ page }) => {
     await open(page, URL)
-    await page.getByRole("link", { name: "Send website or price list" }).click()
+    await page.getByRole("link", { name: "Add equipment" }).click()
     await expect(page).toHaveURL(/\/welcome\/setup\/sources$/)
   })
 
