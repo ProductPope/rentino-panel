@@ -41,9 +41,13 @@ const SIZE_CLASS: Record<EditPanelSize, string> = {
   full: "data-[side=right]:sm:max-w-none",
 }
 
-/** First form control in the body — where focus goes when the panel opens. */
-const FIRST_FIELD =
-  'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), [role="combobox"]:not([aria-disabled="true"])'
+/** First editable form control in the body — where focus goes when the panel opens. */
+const FIRST_FIELD = [
+  // Base UI radios and checkboxes keep a hidden native input (tabindex -1, aria-hidden): skip it.
+  'input:not([type="hidden"]):not([disabled]):not([readonly]):not([tabindex="-1"]):not([aria-hidden="true"])',
+  "textarea:not([disabled]):not([readonly])",
+  '[role="combobox"]:not([aria-disabled="true"])',
+].join(", ")
 
 export interface EditPanelProps {
   /** Element that opens the panel, e.g. `<Button>Add order</Button>`. Omit when controlled. */
