@@ -7,6 +7,7 @@ import type * as React from "react"
 import { IconButton } from "@/components/eq/icon-button"
 import { WELCOME_HREF } from "@/config/navigation"
 import { SETUP_STEPS } from "@/lib/onboarding"
+import { cn } from "@/lib/utils"
 
 import { RentinoBrand } from "../rentino-brand"
 
@@ -14,7 +15,16 @@ import { RentinoBrand } from "../rentino-brand"
  * Full-screen setup wizard frame: logo · "Step N of 5" · close. Covers the admin shell, as in the
  * handoff. EQ-librium has no stepper yet, so the step is text (reported as a gap to EQ-librium).
  */
-export function SetupShell({ step, children }: { step: number; children: React.ReactNode }) {
+export function SetupShell({
+  step,
+  wide = false,
+  children,
+}: {
+  step: number
+  /** Lists (equipment and prices) get more room than single-column forms. */
+  wide?: boolean
+  children: React.ReactNode
+}) {
   const router = useRouter()
   const name = SETUP_STEPS[step - 1]
   return (
@@ -38,7 +48,12 @@ export function SetupShell({ step, children }: { step: number; children: React.R
           />
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-(--eq-page-padding) py-10 sm:py-14">
+      <main
+        className={cn(
+          "mx-auto flex w-full flex-1 flex-col gap-6 px-(--eq-page-padding) py-10 sm:py-14",
+          wide ? "max-w-5xl" : "max-w-2xl"
+        )}
+      >
         {children}
       </main>
     </div>

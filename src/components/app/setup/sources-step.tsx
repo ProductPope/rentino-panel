@@ -1,6 +1,12 @@
 "use client"
 
-import { ArrowRightIcon, FileSpreadsheetIcon, FileTextIcon, GlobeIcon, XIcon } from "lucide-react"
+import {
+  ArrowRightIcon,
+  FileSpreadsheetIcon,
+  FileTextIcon,
+  ListPlusIcon,
+  XIcon,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useId, useRef, useState } from "react"
 
@@ -20,38 +26,37 @@ import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/sonner"
-import { SETUP_PROGRESS_HREF } from "@/config/navigation"
+import { SETUP_EQUIPMENT_HREF, SETUP_PROGRESS_HREF } from "@/config/navigation"
 import { formatFileSize, onboardingService, sourcesError, type SourceKind } from "@/lib/onboarding"
 
 const SOURCES: { kind: SourceKind; title: string; description: string; icon: React.ReactNode }[] = [
   {
-    kind: "website",
-    title: "Website address",
-    description: "You have a website with your offer and prices.",
-    icon: <GlobeIcon aria-hidden="true" />,
+    kind: "manual",
+    title: "Enter it by hand",
+    description: "Add your equipment and prices yourself. Three examples show you how.",
+    icon: <ListPlusIcon aria-hidden="true" />,
   },
   {
     kind: "file",
-    title: "Price list file",
-    description: "PDF, Excel, CSV or a photo of the price list on your wall.",
+    title: "Upload a price list",
+    description: "PDF, Excel, CSV or a photo of the price list on your wall. We prepare a draft.",
     icon: <FileSpreadsheetIcon aria-hidden="true" />,
   },
 ]
 
 const ACCEPT = ".pdf,.xls,.xlsx,.csv,image/jpeg,image/png,image/heic"
 
-/** Setup step 1: where we get the customer's equipment and prices from. */
+/** Setup step 1: add equipment by hand, or send a price list for us to prepare. */
 export function SourcesStep() {
   const router = useRouter()
   const uid = useId()
-  const [kind, setKind] = useState<SourceKind>("website")
-  const [website, setWebsite] = useState("")
+  const [kind, setKind] = useState<SourceKind>("manual")
   const [file, setFile] = useState<{ name: string; size: number }>()
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const fieldRef = useRef<HTMLInputElement>(null)
 
-  const error = sourcesError(kind, website, file?.name)
+  const error = sourcesError(kind, file?.name)
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -60,11 +65,14 @@ export function SourcesStep() {
       fieldRef.current?.focus()
       return
     }
+    if (kind === "manual") {
+      // Nothing to prepare: the customer goes straight to the equipment list.
+      router.push(SETUP_EQUIPMENT_HREF)
+      return
+    }
     setSubmitting(true)
     try {
-      await onboardingService.submitSources(
-        kind === "website" ? { kind, website } : { kind, fileName: file?.name ?? "" }
-      )
+      await onboardingService.submitSources({ fileName: file?.name ?? "" })
       router.push(SETUP_PROGRESS_HREF)
     } catch {
       setSubmitting(false)
@@ -75,16 +83,18 @@ export function SourcesStep() {
   return (
     <>
       <div className="flex flex-col gap-2">
-        <h1 className="text-page-title text-foreground">We&apos;ll set up your system for you</h1>
+        <h1 className="text-page-title text-foreground">Add your equipment</h1>
         <p className="text-body text-muted-foreground">
-          Send us your website or price list. We&apos;ll add your equipment, prices and rental terms
-          — meanwhile, try the system on demo data.
+          Enter it by hand, or send us your price list and we&apos;ll prepare it for you —
+          meanwhile, try the system on demo data.
         </p>
       </div>
 
       <form noValidate onSubmit={(e) => void submit(e)} className="flex flex-col gap-6">
         <FieldSet>
-          <FieldLegend variant="label">Where should we get your equipment and prices?</FieldLegend>
+          <FieldLegend variant="label">
+            How do you want to add your equipment and prices?
+          </FieldLegend>
           <RadioGroup
             value={kind}
             onValueChange={(value) => {
@@ -109,26 +119,7 @@ export function SourcesStep() {
           </RadioGroup>
         </FieldSet>
 
-        {kind === "website" ? (
-          <FormField
-            label="Your website"
-            description="We'll read categories, photos and prices. We won't change anything on your website."
-            error={showErrors ? error : undefined}
-            required
-          >
-            {(control) => (
-              <Input
-                {...control}
-                ref={fieldRef}
-                inputMode="url"
-                autoComplete="url"
-                placeholder="e.g. bikesmallorca.com"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-              />
-            )}
-          </FormField>
-        ) : file ? (
+        {kind === "manual" ? null : file ? (
           <div className="flex items-center gap-3 rounded-md border border-border px-3 py-2">
             <FileTextIcon aria-hidden="true" className="size-4 shrink-0 text-primary-text" />
             <div className="flex min-w-0 flex-1 flex-col">
@@ -170,7 +161,7 @@ export function SourcesStep() {
         <div className="flex justify-end border-t border-border pt-5">
           <Button type="submit" disabled={submitting}>
             {submitting && <Spinner data-icon="inline-start" aria-label="Sending" />}
-            Set up my system
+            {kind === "manual" ? "Continue" : "Send the price list"}
             <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
           </Button>
         </div>

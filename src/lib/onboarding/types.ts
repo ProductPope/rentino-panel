@@ -1,3 +1,5 @@
+import type { EquipmentInput, EquipmentItem } from "./equipment"
+
 /**
  * Onboarding of a new rental business (rentinodev prototype, handoff "Onboarding nowego klienta").
  * The panel has no backend: the status comes from a mock (`src/mocks/onboarding.ts`).
@@ -8,7 +10,7 @@
 export type OnboardingStage =
   /** A — nothing sent yet; the account runs on demo data. */
   | "awaiting_input"
-  /** B — we're preparing a draft from the customer's website or price list. */
+  /** B — we're preparing a draft from the customer's price list. */
   | "processing"
   /** C — the draft is ready for the customer to review and approve. */
   | "draft_ready"
@@ -18,16 +20,16 @@ export type OnboardingStage =
 export interface OnboardingAccount {
   name: string
   city: string
-  /** The customer's website, e.g. "bikesmallorca.com". */
-  website: string
   /** File name of the uploaded price list, if any. */
   priceListFile?: string
   /** Where we email the customer when the draft is ready. */
   email: string
 }
 
-/** What the customer sends in step 1 of the setup wizard: a website address or a price list. */
-export type SourcesInput = { kind: "website"; website: string } | { kind: "file"; fileName: string }
+/** What the customer sends in step 1 of the setup wizard when they choose a price list file. */
+export interface SourcesInput {
+  fileName: string
+}
 
 export interface OnboardingProcessing {
   /** When the sources were sent (ISO). Absent in forced demo states. */
@@ -69,7 +71,7 @@ export interface OnboardingStatus {
 
 export class OnboardingError extends Error {
   constructor(
-    readonly reason: "unavailable",
+    readonly reason: "unavailable" | "nothing_to_import",
     message: string
   ) {
     super(message)
@@ -79,6 +81,17 @@ export class OnboardingError extends Error {
 
 export interface OnboardingService {
   getStatus(): Promise<OnboardingStatus>
-  /** Step 1 of the setup wizard: send a website or price list; preparing the draft starts. */
+  /** Step 1 of the setup wizard: send a price list; preparing the draft starts. */
   submitSources(input: SourcesInput): Promise<OnboardingStatus>
+  /** Equipment added by hand; starts with three demo examples. */
+  listEquipment(): Promise<EquipmentItem[]>
+  addEquipment(input: EquipmentInput): Promise<EquipmentItem>
+  /** Replaces an item, or puts a removed one back (undo). */
+  putEquipment(item: EquipmentItem): Promise<EquipmentItem>
+  removeEquipment(id: string): Promise<void>
+  /**
+   * Approve the equipment added by hand: it replaces the demo data (demo examples are dropped).
+   * Fails without at least one item of the customer's own.
+   */
+  importEquipment(): Promise<OnboardingStatus>
 }

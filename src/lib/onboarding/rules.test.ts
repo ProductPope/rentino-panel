@@ -18,7 +18,6 @@ const base: OnboardingStatus = {
   account: {
     name: "Bikes Mallorca",
     city: "Palma de Mallorca",
-    website: "bikesmallorca.com",
     email: "marek@bikesmallorca.com",
     priceListFile: "price-list-2026.pdf",
   },
@@ -75,7 +74,7 @@ describe("activeProcessingLabel", () => {
       "Preparing a draft for you to review"
     )
     expect(activeProcessingLabel(at({ processing: { activeStep: -1, long: false } }))).toBe(
-      "Read bikesmallorca.com and price-list-2026.pdf"
+      "Read price-list-2026.pdf"
     )
   })
 })
@@ -145,10 +144,9 @@ describe("imported card", () => {
 
 describe("setup step 1", () => {
   it("needs the chosen source filled in", () => {
-    expect(sourcesError("website", "  ", undefined)).toBe("Enter your website address.")
-    expect(sourcesError("website", "bikesmallorca.com", undefined)).toBeUndefined()
-    expect(sourcesError("file", "bikesmallorca.com", undefined)).toBe("Add your price list file.")
-    expect(sourcesError("file", "", "prices.pdf")).toBeUndefined()
+    expect(sourcesError("manual", undefined)).toBeUndefined()
+    expect(sourcesError("file", undefined)).toBe("Add your price list file.")
+    expect(sourcesError("file", "prices.pdf")).toBeUndefined()
   })
 
   it("formats file sizes", () => {
@@ -169,6 +167,6 @@ describe("processingRows (setup step 2)", () => {
       "pending",
       "pending",
     ])
-    expect(rows[0]?.label).toBe("Read bikesmallorca.com and price-list-2026.pdf")
+    expect(rows[0]?.label).toBe("Read price-list-2026.pdf")
   })
 })

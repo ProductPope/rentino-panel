@@ -24,6 +24,7 @@ export const WELCOME_HREF = "/welcome"
 /** Setup wizard (full screen, outside the admin shell). */
 export const SETUP_SOURCES_HREF = "/welcome/setup/sources"
 export const SETUP_PROGRESS_HREF = "/welcome/setup/progress"
+export const SETUP_EQUIPMENT_HREF = "/welcome/setup/equipment"
 export const DISCOUNT_CODES_HREF = "/settings/discount-codes"
 export const BOOKING_PAGE_HREF = "/booking-page"
 
