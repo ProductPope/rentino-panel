@@ -22,9 +22,16 @@ export interface OnboardingAccount {
   website: string
   /** File name of the uploaded price list, if any. */
   priceListFile?: string
+  /** Where we email the customer when the draft is ready. */
+  email: string
 }
 
+/** What the customer sends in step 1 of the setup wizard: a website address or a price list. */
+export type SourcesInput = { kind: "website"; website: string } | { kind: "file"; fileName: string }
+
 export interface OnboardingProcessing {
+  /** When the sources were sent (ISO). Absent in forced demo states. */
+  submittedAt?: string
   /** Index of the processing step in progress (see `processingSteps`). */
   activeStep: number
   /** The price list is large: the draft takes hours, not minutes. */
@@ -72,4 +79,6 @@ export class OnboardingError extends Error {
 
 export interface OnboardingService {
   getStatus(): Promise<OnboardingStatus>
+  /** Step 1 of the setup wizard: send a website or price list; preparing the draft starts. */
+  submitSources(input: SourcesInput): Promise<OnboardingStatus>
 }

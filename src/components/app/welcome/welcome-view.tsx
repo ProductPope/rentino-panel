@@ -10,7 +10,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/sonner"
-import { BOOKING_PAGE_HREF } from "@/config/navigation"
+import { BOOKING_PAGE_HREF, SETUP_PROGRESS_HREF, SETUP_SOURCES_HREF } from "@/config/navigation"
 import {
   importedSummary,
   importedTitle,
@@ -34,13 +34,11 @@ type Load =
 const errorMessage = (err: unknown) =>
   err instanceof Error && err.message ? err.message : "Something went wrong. Try again."
 
-/** Steps that open the setup wizard — it ships in the next stage. */
-const WIZARD_ACTIONS: WelcomeAction[] = [
-  "send_sources",
-  "show_progress",
-  "review_draft",
-  "finish_settings",
-]
+/** Wizard steps not built yet (stages 3–4). */
+const WIZARD_ACTIONS: WelcomeAction[] = ["review_draft", "finish_settings"]
+
+/** How often state B checks whether the draft is ready (the card updates by itself). */
+const POLL_MS = 2000
 
 function handleAction(action: WelcomeAction) {
   if (WIZARD_ACTIONS.includes(action))
@@ -50,8 +48,12 @@ function handleAction(action: WelcomeAction) {
   else toast("Coming soon", { description: "This isn't part of the panel yet." })
 }
 
-const hrefFor = (action: WelcomeAction) =>
-  action === "booking_page" ? BOOKING_PAGE_HREF : undefined
+const HREFS: Partial<Record<WelcomeAction, string>> = {
+  send_sources: SETUP_SOURCES_HREF,
+  show_progress: SETUP_PROGRESS_HREF,
+  booking_page: BOOKING_PAGE_HREF,
+}
+const hrefFor = (action: WelcomeAction) => HREFS[action]
 
 /** Welcome: the onboarding checklist of a new rental business (states A–D). */
 export function WelcomeView() {
@@ -71,6 +73,20 @@ export function WelcomeView() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchStatus()
   }, [fetchStatus])
+
+  const processing = load.state === "ready" && load.status.stage === "processing"
+  useEffect(() => {
+    if (!processing) return
+    // While the draft is being prepared, refresh quietly: the step label moves on and the card
+    // turns into "ready to review" by itself (in the product, the customer also gets an email).
+    const timer = setInterval(() => {
+      onboardingService
+        .getStatus()
+        .then((status) => setLoad({ state: "ready", status }))
+        .catch(() => undefined)
+    }, POLL_MS)
+    return () => clearInterval(timer)
+  }, [processing])
 
   if (load.state === "loading")
     return (

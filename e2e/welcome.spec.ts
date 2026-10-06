@@ -47,9 +47,15 @@ test.describe("before import (A–C)", () => {
     await expect(steps(page).nth(0)).toContainText("1 item needs your decision")
   })
 
-  test("the wizard isn't built yet: its step says so", async ({ page }) => {
+  test("A: sending your details opens the setup wizard", async ({ page }) => {
     await open(page, URL)
-    await page.getByRole("button", { name: "Send website or price list" }).click()
+    await page.getByRole("link", { name: "Send website or price list" }).click()
+    await expect(page).toHaveURL(/\/welcome\/setup\/sources$/)
+  })
+
+  test("C: reviewing isn't built yet and says so", async ({ page }) => {
+    await open(page, `${URL}?mock=draft-ready`)
+    await page.getByRole("button", { name: "Review and approve" }).click()
     await expect(page.getByText("The setup wizard is coming soon")).toBeVisible()
   })
 
