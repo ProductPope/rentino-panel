@@ -45,7 +45,8 @@ const buttonVariants = cva(
 export interface ButtonOwnProps {
   /**
    * Visual hierarchy. `default` is the primary action — one per header. `destructive` is tonal;
-   * `destructive-solid` is reserved for the confirming button of a `ConfirmDialog`.
+   * `destructive-solid` is reserved for the confirming button of a confirmation (ConfirmDialog,
+   * EditPanel's discard question).
    */
   variant?: VariantProps<typeof buttonVariants>["variant"]
   /** `default` 36px · `sm` 32px · `lg` 40px · `icon*` square. */

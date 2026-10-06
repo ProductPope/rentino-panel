@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
 
 import { PageHeader } from "@/components/eq/page-header"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -106,15 +106,13 @@ export function WelcomeView() {
         <Alert variant="destructive" announce="assertive">
           <TriangleAlertIcon aria-hidden="true" />
           <AlertTitle>Your onboarding steps couldn&apos;t be loaded</AlertTitle>
-          <AlertDescription>
-            <p>{load.message}</p>
-            <div>
-              <Button size="sm" variant="outline" onClick={() => void fetchStatus()}>
-                <RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
-                Try again
-              </Button>
-            </div>
-          </AlertDescription>
+          <AlertDescription>{load.message}</AlertDescription>
+          <AlertAction>
+            <Button size="sm" variant="outline" onClick={() => void fetchStatus()}>
+              <RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
+              Try again
+            </Button>
+          </AlertAction>
         </Alert>
       </div>
     )
