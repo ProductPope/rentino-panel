@@ -15,6 +15,7 @@ import {
   SETUP_PROGRESS_HREF,
   SETUP_SETTINGS_HREF,
   SETUP_SOURCES_HREF,
+  SETUP_START_HREF,
 } from "@/config/navigation"
 import {
   importedSummary,
@@ -57,6 +58,7 @@ const HREFS: Partial<Record<WelcomeAction, string>> = {
   send_sources: SETUP_SOURCES_HREF,
   show_progress: SETUP_PROGRESS_HREF,
   finish_settings: SETUP_SETTINGS_HREF,
+  payments: SETUP_START_HREF,
   booking_page: BOOKING_PAGE_HREF,
 }
 const hrefFor = (action: WelcomeAction) => HREFS[action]

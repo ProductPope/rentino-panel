@@ -34,7 +34,7 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/sonner"
 import { Switch } from "@/components/ui/switch"
-import { SETUP_SOURCES_HREF, WELCOME_HREF } from "@/config/navigation"
+import { SETUP_START_HREF, WELCOME_HREF } from "@/config/navigation"
 import {
   onboardingService,
   toSettings,
@@ -45,6 +45,8 @@ import {
   type SettingsDraft,
 } from "@/lib/onboarding"
 import { tenant } from "@/lib/tenant"
+
+import { EquipmentFirst } from "./equipment-first"
 
 type Load = { state: "loading" } | { state: "error" } | { state: "ready"; status: OnboardingStatus }
 
@@ -100,22 +102,7 @@ export function SettingsStep() {
     return (
       <>
         {intro}
-        <Alert variant="info">
-          <TriangleAlertIcon aria-hidden="true" />
-          <AlertTitle>Add your equipment first</AlertTitle>
-          <AlertDescription>
-            <p>Rental settings come after your equipment and prices are approved.</p>
-            <div>
-              <Link
-                href={SETUP_SOURCES_HREF}
-                className={buttonVariants({ size: "sm", variant: "outline" })}
-              >
-                Add equipment
-                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
-              </Link>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <EquipmentFirst what="Rental settings" />
       </>
     )
 
@@ -152,7 +139,7 @@ function SettingsForm({ status }: { status: OnboardingStatus }) {
     try {
       await onboardingService.saveSettings(toSettings(draft, settings))
       toast.success("Your rental settings are saved")
-      router.push(WELCOME_HREF)
+      router.push(SETUP_START_HREF)
     } catch (err) {
       setSaving(false)
       toast.error(err instanceof Error ? err.message : "We couldn't save. Try again.")

@@ -26,6 +26,7 @@ export const SETUP_SOURCES_HREF = "/welcome/setup/sources"
 export const SETUP_PROGRESS_HREF = "/welcome/setup/progress"
 export const SETUP_EQUIPMENT_HREF = "/welcome/setup/equipment"
 export const SETUP_SETTINGS_HREF = "/welcome/setup/settings"
+export const SETUP_START_HREF = "/welcome/setup/start"
 export const DISCOUNT_CODES_HREF = "/settings/discount-codes"
 export const BOOKING_PAGE_HREF = "/booking-page"
 
