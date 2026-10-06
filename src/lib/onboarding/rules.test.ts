@@ -23,7 +23,20 @@ const base: OnboardingStatus = {
   },
   processing: { activeStep: 3, long: false },
   draft: { categories: 3, units: 26, addons: 2, openDecisions: 1 },
-  settings: { payMode: "deposit", depositPercent: 20, delivery: true },
+  settings: {
+    payMode: "deposit",
+    depositPercent: 20,
+    restDaysBefore: 2,
+    delivery: true,
+    freeFromDays: 3,
+    deliveryFee: 10,
+    perKmFee: null,
+    vatRate: 21,
+    vatCountry: "Spain",
+    vatConfirmed: false,
+    cardFeePercent: null,
+    signatureRequired: true,
+  },
   settingsDone: false,
   paymentsConnected: false,
 }
@@ -136,7 +149,7 @@ describe("imported card", () => {
     expect(
       importedSummary({
         ...done,
-        settings: { payMode: "full", depositPercent: 0, delivery: false },
+        settings: { ...done.settings, payMode: "full", delivery: false },
       })
     ).toBe("3 categories · 26 units · full payment online · pickup only · demo data removed")
   })

@@ -65,7 +65,20 @@ function seed(): OnboardingStatus {
     },
     processing: { activeStep: 3, long: false },
     draft: { categories: 3, units: 26, addons: 2, openDecisions: 1 },
-    settings: { payMode: "deposit", depositPercent: 20, delivery: true },
+    settings: {
+      payMode: "deposit",
+      depositPercent: 20,
+      restDaysBefore: 2,
+      delivery: true,
+      freeFromDays: 3,
+      deliveryFee: 10,
+      perKmFee: null,
+      vatRate: 21,
+      vatCountry: "Spain",
+      vatConfirmed: false,
+      cardFeePercent: null,
+      signatureRequired: true,
+    },
     settingsDone: false,
     paymentsConnected: false,
   }
@@ -182,6 +195,20 @@ export const mockOnboardingService: OnboardingService = {
   async removeEquipment(id) {
     await delay()
     equipment.write(equipment.read().filter((i) => i.id !== id))
+  },
+
+  async saveSettings(settings) {
+    await delay()
+    // A forced demo state counts as the current one, so `?mock=imported` can save too.
+    const forced = onboardingScenario()
+    const status = forced ? { ...store.read(), ...SCENARIOS[forced] } : store.read()
+    if (status.stage !== "imported")
+      throw new OnboardingError("not_imported", "Approve your equipment first.")
+    if (!settings.vatConfirmed)
+      throw new OnboardingError("vat_not_confirmed", "Confirm the VAT rate to continue.")
+    const next: OnboardingStatus = { ...status, settings, settingsDone: true }
+    store.write(next)
+    return next
   },
 
   async importEquipment() {

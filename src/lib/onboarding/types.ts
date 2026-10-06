@@ -51,10 +51,27 @@ export interface DraftSummary {
   openDecisions: number
 }
 
+/** Rental terms from setup step 4. Amounts are in the tenant currency. */
 export interface RentalSettings {
   payMode: "full" | "deposit"
+  /** Share paid at booking when `payMode` is "deposit". */
   depositPercent: number
+  /** The rest is charged this many days before pickup. */
+  restDaysBefore: number
   delivery: boolean
+  /** Delivery is free from this many rental days. */
+  freeFromDays: number
+  deliveryFee: number
+  /** Optional: a price per km instead of the flat fee. */
+  perKmFee: number | null
+  vatRate: number
+  vatCountry: string
+  /** Tax settings are the customer's responsibility, so we always ask. */
+  vatConfirmed: boolean
+  /** Optional surcharge for card payments, in %. */
+  cardFeePercent: number | null
+  /** Customers sign the rental terms when they book. */
+  signatureRequired: boolean
 }
 
 export interface OnboardingStatus {
@@ -71,7 +88,7 @@ export interface OnboardingStatus {
 
 export class OnboardingError extends Error {
   constructor(
-    readonly reason: "unavailable" | "nothing_to_import",
+    readonly reason: "unavailable" | "nothing_to_import" | "vat_not_confirmed" | "not_imported",
     message: string
   ) {
     super(message)
@@ -89,6 +106,8 @@ export interface OnboardingService {
   /** Replaces an item, or puts a removed one back (undo). */
   putEquipment(item: EquipmentItem): Promise<EquipmentItem>
   removeEquipment(id: string): Promise<void>
+  /** Step 4: save the rental terms. Needs the VAT rate confirmed; marks the settings done. */
+  saveSettings(settings: RentalSettings): Promise<OnboardingStatus>
   /**
    * Approve the equipment added by hand: it replaces the demo data (demo examples are dropped).
    * Fails without at least one item of the customer's own.

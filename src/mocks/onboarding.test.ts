@@ -119,3 +119,24 @@ describe("equipment added by hand", () => {
     expect(items.map((i) => i.name)).toEqual(["City bike"])
   })
 })
+
+describe("rental settings", () => {
+  it("can't be saved before import or without VAT confirmed; then marks settings done", async () => {
+    visit("?mock=reset")
+    const status = await mockOnboardingService.getStatus()
+    vi.unstubAllGlobals()
+    const confirmed = { ...status.settings, vatConfirmed: true }
+    await expect(mockOnboardingService.saveSettings(confirmed)).rejects.toMatchObject({
+      reason: "not_imported",
+    })
+
+    visit("?mock=imported")
+    await expect(mockOnboardingService.saveSettings(status.settings)).rejects.toMatchObject({
+      reason: "vat_not_confirmed",
+    })
+    const saved = await mockOnboardingService.saveSettings({ ...confirmed, payMode: "full" })
+    expect(saved).toMatchObject({ stage: "imported", settingsDone: true })
+    vi.unstubAllGlobals()
+    expect((await mockOnboardingService.getStatus()).settings.payMode).toBe("full")
+  })
+})
