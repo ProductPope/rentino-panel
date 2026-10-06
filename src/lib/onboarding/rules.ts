@@ -1,4 +1,4 @@
-import type { DraftSummary, OnboardingAccount, OnboardingStatus, SourcesInput } from "./types"
+import type { DraftSummary, OnboardingAccount, OnboardingStatus } from "./types"
 
 /** The setup wizard's steps, in order. The wizard shows "Step N of 5 · <name>". */
 export const SETUP_STEPS = [
@@ -9,11 +9,12 @@ export const SETUP_STEPS = [
   "Start",
 ] as const
 
-export type SourceKind = SourcesInput["kind"]
+/** How the customer adds equipment in step 1: by hand, or from a price list file we prepare. */
+export type SourceKind = "manual" | "file"
 
-/** Step 1 validation: the chosen source must be filled in. Returns the error to show at the field. */
-export function sourcesError(kind: SourceKind, website: string, fileName: string | undefined) {
-  if (kind === "website") return website.trim() ? undefined : "Enter your website address."
+/** Step 1 validation: a price list needs a file. Returns the error to show at the field. */
+export function sourcesError(kind: SourceKind, fileName: string | undefined) {
+  if (kind === "manual") return undefined
   return fileName ? undefined : "Add your price list file."
 }
 
@@ -64,7 +65,7 @@ export interface WelcomeStep {
 /** Processing steps as shown while the draft is being prepared. */
 export function processingSteps(account: OnboardingAccount) {
   return [
-    `Read ${account.website} and ${account.priceListFile ?? "your price list"}`,
+    `Read ${account.priceListFile ?? "your price list"}`,
     "Found 3 bike categories and 2 add-ons",
     "26 bikes and their prices",
     "Checking seasonal price lists",
@@ -100,7 +101,7 @@ export function draftReadySummary(draft: DraftSummary) {
 export function welcomeIntro(stage: OnboardingStatus["stage"]) {
   switch (stage) {
     case "awaiting_input":
-      return "Get started in a few steps. Send us your website or price list and we'll set up your equipment, prices and rental terms. Meanwhile, try the system on demo data."
+      return "Get started in a few steps. Add your equipment by hand, or send us your price list and we'll set it up for you. Meanwhile, try the system on demo data."
     case "processing":
       return "We're setting up your equipment, prices and rental terms. Meanwhile, see how the system works on demo data."
     case "draft_ready":
@@ -131,10 +132,10 @@ function firstStep(status: OnboardingStatus): WelcomeStep {
     case "awaiting_input":
       return {
         id: "send_sources",
-        title: "Send us your details",
+        title: "Add your equipment",
         description:
-          "Your website or price list. We'll set up your equipment and prices — you just review the draft.",
-        cta: "Send website or price list",
+          "Enter it by hand, or send us your price list — we'll prepare a draft for you to review.",
+        cta: "Add equipment",
         highlighted: true,
       }
     case "processing":
@@ -170,8 +171,7 @@ export function nextSteps(status: OnboardingStatus): WelcomeStep[] {
     steps.push({
       id: "finish_settings",
       title: "Finish your rental settings",
-      description:
-        "Confirm the VAT rate. We filled in payments, delivery and terms from your website.",
+      description: "Confirm the VAT rate. We filled in payments, delivery and terms for you.",
       cta: "Finish",
       highlighted: true,
     })
@@ -227,7 +227,7 @@ export function importedSummary(status: OnboardingStatus) {
         : "full payment online",
       settings.delivery ? "delivery" : "pickup only"
     )
-  } else {
+  } else if (draft.addons > 0) {
     parts.push(plural(draft.addons, "add-on", "add-ons"))
   }
   parts.push("demo data removed")

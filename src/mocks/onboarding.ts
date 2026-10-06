@@ -1,3 +1,4 @@
+import { equipmentTotals, type EquipmentItem } from "@/lib/onboarding/equipment"
 import {
   OnboardingError,
   type OnboardingService,
@@ -59,7 +60,6 @@ function seed(): OnboardingStatus {
     account: {
       name: "Bikes Mallorca",
       city: "Palma de Mallorca",
-      website: "bikesmallorca.com",
       priceListFile: "price-list-2026.pdf",
       email: "marek@bikesmallorca.com",
     },
@@ -72,6 +72,47 @@ function seed(): OnboardingStatus {
 }
 
 const store = persisted<OnboardingStatus>("rentino.mock.onboarding", seed)
+
+/** Three examples on demo data to start from (the customer can remove them). */
+function seedEquipment(): EquipmentItem[] {
+  return [
+    {
+      id: "demo-trek-marlin-7",
+      name: "Trek Marlin 7 Mountain Bike",
+      category: "Bikes",
+      units: 1,
+      codePrefix: "BIK",
+      pricePerDay: 35,
+      pricePerWeek: 180,
+      photoUrl: "/demo/equipment/trek-marlin-7.webp",
+      demo: true,
+    },
+    {
+      id: "demo-club-car-tempo",
+      name: "Club Car Tempo",
+      category: "Golf carts",
+      units: 1,
+      codePrefix: "GLF",
+      pricePerDay: 120,
+      pricePerWeek: 650,
+      photoUrl: "/demo/equipment/club-car-tempo.webp",
+      demo: true,
+    },
+    {
+      id: "demo-wilson-pro-staff-rf97",
+      name: "Wilson Pro Staff RF97 Autograph",
+      category: "Tennis rackets",
+      units: 1,
+      codePrefix: "TNS",
+      pricePerDay: 12,
+      pricePerWeek: 60,
+      photoUrl: "/demo/equipment/wilson-pro-staff-rf97.webp",
+      demo: true,
+    },
+  ]
+}
+
+const equipment = persisted<EquipmentItem[]>("rentino.mock.equipment", seedEquipment)
 
 /** The stored status, with preparing advanced to now (and finished when it's time). */
 function current(now = Date.now()): OnboardingStatus {
@@ -91,7 +132,10 @@ function current(now = Date.now()): OnboardingStatus {
 export const mockOnboardingService: OnboardingService = {
   async getStatus() {
     const scenario = mockScenario()
-    if (scenario === "reset") store.reset()
+    if (scenario === "reset") {
+      store.reset()
+      equipment.reset()
+    }
     await delay()
     if (scenario === "error")
       throw new OnboardingError("unavailable", "The server didn't respond. Try again.")
@@ -105,13 +149,55 @@ export const mockOnboardingService: OnboardingService = {
     const next: OnboardingStatus = {
       ...status,
       stage: "processing",
-      account: {
-        ...status.account,
-        ...(input.kind === "website"
-          ? { website: input.website.trim(), priceListFile: undefined }
-          : { priceListFile: input.fileName }),
-      },
+      account: { ...status.account, priceListFile: input.fileName },
       processing: { submittedAt: new Date().toISOString(), activeStep: 0, long: false },
+    }
+    store.write(next)
+    return next
+  },
+
+  async listEquipment() {
+    await delay()
+    return equipment.read()
+  },
+
+  async addEquipment(input) {
+    await delay()
+    const item: EquipmentItem = { ...input, id: `eq-${crypto.randomUUID()}` }
+    equipment.write([...equipment.read(), item])
+    return item
+  },
+
+  async putEquipment(item) {
+    await delay()
+    const items = equipment.read()
+    equipment.write(
+      items.some((i) => i.id === item.id)
+        ? items.map((i) => (i.id === item.id ? item : i))
+        : [...items, item]
+    )
+    return item
+  },
+
+  async removeEquipment(id) {
+    await delay()
+    equipment.write(equipment.read().filter((i) => i.id !== id))
+  },
+
+  async importEquipment() {
+    await delay()
+    const totals = equipmentTotals(equipment.read())
+    if (totals.items === 0)
+      throw new OnboardingError(
+        "nothing_to_import",
+        "Add at least one item of your own — demo examples aren't saved."
+      )
+    // Approving replaces the demo data: the examples go, the customer's items stay.
+    equipment.write(equipment.read().filter((i) => !i.demo))
+    const next: OnboardingStatus = {
+      ...store.read(),
+      stage: "imported",
+      draft: { categories: totals.categories, units: totals.units, addons: 0, openDecisions: 0 },
     }
     store.write(next)
     return next

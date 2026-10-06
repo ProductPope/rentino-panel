@@ -54,17 +54,16 @@ describe("simulated preparing", () => {
     expect(simulatedProgress(SIMULATION.READY_MS).ready).toBe(true)
   })
 
-  it("sending a website starts preparing and the draft is ready later", async () => {
+  it("sending a price list starts preparing and the draft is ready later", async () => {
     vi.useFakeTimers({ toFake: ["Date", "setTimeout"] })
     try {
-      const sent = mockOnboardingService.submitSources({
-        kind: "website",
-        website: " shop.example ",
-      })
+      const sent = mockOnboardingService.submitSources({ fileName: "prices.xlsx" })
       await vi.runAllTimersAsync()
       const status = await sent
-      expect(status).toMatchObject({ stage: "processing", account: { website: "shop.example" } })
-      expect(status.account.priceListFile).toBeUndefined()
+      expect(status).toMatchObject({
+        stage: "processing",
+        account: { priceListFile: "prices.xlsx" },
+      })
 
       vi.setSystemTime(Date.now() + SIMULATION.READY_MS)
       const later = mockOnboardingService.getStatus()
@@ -73,5 +72,50 @@ describe("simulated preparing", () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe("equipment added by hand", () => {
+  const input = {
+    name: "City bike",
+    category: "Bikes",
+    units: 14,
+    codePrefix: "BIK",
+    pricePerDay: 18,
+    pricePerWeek: 90,
+  }
+
+  it("starts with three demo examples and can't be approved with only those", async () => {
+    visit("?mock=reset")
+    await mockOnboardingService.getStatus()
+    vi.unstubAllGlobals()
+    const items = await mockOnboardingService.listEquipment()
+    expect(items.map((i) => i.name)).toEqual([
+      "Trek Marlin 7 Mountain Bike",
+      "Club Car Tempo",
+      "Wilson Pro Staff RF97 Autograph",
+    ])
+    expect(items.every((i) => i.demo)).toBe(true)
+    await expect(mockOnboardingService.importEquipment()).rejects.toMatchObject({
+      reason: "nothing_to_import",
+    })
+  })
+
+  it("adds, edits, removes and puts back an item", async () => {
+    const added = await mockOnboardingService.addEquipment(input)
+    await mockOnboardingService.putEquipment({ ...added, pricePerDay: 20 })
+    expect((await mockOnboardingService.listEquipment()).at(-1)?.pricePerDay).toBe(20)
+    await mockOnboardingService.removeEquipment(added.id)
+    expect((await mockOnboardingService.listEquipment()).some((i) => i.id === added.id)).toBe(false)
+    await mockOnboardingService.putEquipment(added)
+    expect((await mockOnboardingService.listEquipment()).some((i) => i.id === added.id)).toBe(true)
+  })
+
+  it("approving drops the demo examples and counts only the customer's items", async () => {
+    const status = await mockOnboardingService.importEquipment()
+    expect(status.stage).toBe("imported")
+    expect(status.draft).toEqual({ categories: 1, units: 14, addons: 0, openDecisions: 0 })
+    const items = await mockOnboardingService.listEquipment()
+    expect(items.map((i) => i.name)).toEqual(["City bike"])
   })
 })
