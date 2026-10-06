@@ -1,6 +1,12 @@
 "use client"
 
-import { RotateCcwIcon, SearchXIcon, TicketPercentIcon, TriangleAlertIcon } from "lucide-react"
+import {
+  PlusIcon,
+  RotateCcwIcon,
+  SearchXIcon,
+  TicketPercentIcon,
+  TriangleAlertIcon,
+} from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { ConfirmDialog } from "@/components/eq/confirm-dialog"
@@ -31,6 +37,7 @@ import {
   type DiscountType,
 } from "@/lib/discount-codes"
 
+import { DiscountCodePanel } from "./discount-code-panel"
 import { DiscountStatusBadge } from "./discount-status-badge"
 import { FilterSelect, type FilterOption } from "./filter-select"
 import { RowActions, type RowAction } from "./row-actions"
@@ -68,6 +75,15 @@ export function DiscountCodesView() {
   const [pending, setPending] = useState<Pending>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+  // `session` re-mounts the panel on every opening, so it starts from the code it opens with.
+  const [panel, setPanel] = useState<{ open: boolean; code?: DiscountCode; session: number }>({
+    open: false,
+    session: 0,
+  })
+  const openPanel = useCallback(
+    (code?: DiscountCode) => setPanel((p) => ({ open: true, code, session: p.session + 1 })),
+    []
+  )
 
   const fetchCodes = useCallback(async () => {
     setLoad({ state: "loading" })
@@ -118,6 +134,9 @@ export function DiscountCodesView() {
   const onAction = useCallback(
     (action: RowAction, code: DiscountCode) => {
       switch (action) {
+        case "edit":
+          openPanel(code)
+          break
         case "copy":
           navigator.clipboard.writeText(code.code).then(
             () => toast.success(`Code ${code.code} copied`),
@@ -139,7 +158,7 @@ export function DiscountCodesView() {
           break
       }
     },
-    [setActive]
+    [setActive, openPanel]
   )
 
   const columns = useMemo(() => {
@@ -215,6 +234,12 @@ export function DiscountCodesView() {
       <PageHeader
         title="Discount codes"
         description="Reusable codes clients enter at checkout, or you add to an order."
+        primaryAction={
+          <Button onClick={() => openPanel()} disabled={load.state !== "ready"}>
+            <PlusIcon data-icon="inline-start" aria-hidden="true" />
+            Add code
+          </Button>
+        }
       />
 
       {load.state === "error" ? (
@@ -293,7 +318,13 @@ export function DiscountCodesView() {
                 <EmptyState
                   icon={<TicketPercentIcon />}
                   title="No discount codes yet"
-                  description="Codes you add appear here. Clients enter them on the booking page."
+                  description="Add a code, then share it with clients — they enter it on the booking page."
+                  action={
+                    <Button onClick={() => openPanel()}>
+                      <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                      Add code
+                    </Button>
+                  }
                 />
               )
             }
@@ -307,6 +338,25 @@ export function DiscountCodesView() {
         </>
       )}
 
+      <DiscountCodePanel
+        key={panel.session}
+        open={panel.open}
+        onOpenChange={(open) => setPanel((p) => ({ ...p, open }))}
+        code={panel.code}
+        existing={codes}
+        onSaved={(saved, created) =>
+          setLoad((l) =>
+            l.state === "ready"
+              ? {
+                  ...l,
+                  codes: created
+                    ? [saved, ...l.codes]
+                    : l.codes.map((c) => (c.id === saved.id ? saved : c)),
+                }
+              : l
+          )
+        }
+      />
       <ConfirmDialog
         open={dialogOpen && pending?.action === "deactivate"}
         onOpenChange={setDialogOpen}
