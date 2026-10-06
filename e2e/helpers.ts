@@ -12,6 +12,8 @@ export const PAGES = [
   { name: "Welcome — load error", path: "/welcome?mock=error" },
   { name: "Setup 1 — your details", path: "/welcome/setup/sources" },
   { name: "Setup 3 — equipment by hand", path: "/welcome/setup/equipment" },
+  { name: "Setup 4 — settings", path: "/welcome/setup/settings?mock=imported" },
+  { name: "Setup 4 — settings before import", path: "/welcome/setup/settings" },
   { name: "Setup 2 — preparing", path: "/welcome/setup/progress?mock=processing" },
   { name: "Setup 2 — preparing (long)", path: "/welcome/setup/progress?mock=processing-long" },
   { name: "Setup 2 — draft ready", path: "/welcome/setup/progress?mock=draft-ready" },
