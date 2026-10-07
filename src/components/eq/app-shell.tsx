@@ -304,7 +304,7 @@ function AppShell({
       className={cn(embedded && "min-h-0 transform-gpu overflow-hidden", className)}
     >
       <Sidebar collapsible="icon" className={cn(embedded && "h-full")}>
-        <SidebarHeader className="h-16 justify-center">{brand}</SidebarHeader>
+        <SidebarHeader className="min-h-16 justify-center">{brand}</SidebarHeader>
         <SidebarContent>
           <nav aria-label={navLabel}>
             {navigation.map((group, index) => (
