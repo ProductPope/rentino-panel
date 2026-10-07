@@ -4,10 +4,9 @@ A clickable prototype of the Rentino admin panel for frontend developers. The UI
 [EQ-librium](https://eq-librium.vercel.app/docs) design system (`@eq` shadcn registry). **There is no
 backend**: data and session are mocked behind typed interfaces.
 
-- **Online prototype**: _link after the Vercel project is set up — see
-  [docs/deployment.md](./docs/deployment.md)_
-- **Documentation**: [docs/](./docs/README.md) — screens, mock states, architecture, backend
-  guidelines
+- **Online prototype**: <https://rentino-panel.vercel.app> (starts at `/welcome`)
+- **Documentation**: <https://rentino-panel.vercel.app/docs>, or [docs/](./docs/README.md) here —
+  screens, mock states, architecture, backend guidelines
 
 ## What's in it
 

@@ -17,6 +17,7 @@ outside this app · _planned_ — "Soon" in the sidebar.
 | [Setup 5 — Start](./setup-5-start.md)                    | `/welcome/setup/start`     | prototype |
 | [Settings → Discount codes](./discount-codes.md)         | `/settings/discount-codes` | prototype |
 | [Booking page](./booking-page.md)                        | `/booking-page`            | stand-in  |
+| [Docs site](./docs-site.md)                              | `/docs/…`                  | prototype |
 
 Planned (sidebar "Soon"): Dashboard, Calendar, Orders, Customers, Equipment, Transport, Service;
 Settings → General settings, Users, Roles, Branches, Payments, Tax. The list lives in
