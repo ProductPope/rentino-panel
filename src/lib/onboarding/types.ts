@@ -1,4 +1,5 @@
 import type { EquipmentInput, EquipmentItem } from "./equipment"
+import type { CustomFields } from "./online"
 
 /**
  * Onboarding of a new rental business (rentinodev prototype, handoff "Onboarding nowego klienta").
@@ -106,6 +107,8 @@ export interface OnboardingService {
   /** Replaces an item, or puts a removed one back (undo). */
   putEquipment(item: EquipmentItem): Promise<EquipmentItem>
   removeEquipment(id: string): Promise<void>
+  /** The account's custom fields, to pick for an item's description and checkout. */
+  listCustomFields(): Promise<CustomFields>
   /** Step 4: save the rental terms. Needs the VAT rate confirmed; marks the settings done. */
   saveSettings(settings: RentalSettings): Promise<OnboardingStatus>
   /** Step 5: connect a payment account (Stripe Connect; simulated). */

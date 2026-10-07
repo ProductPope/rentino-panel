@@ -1,6 +1,6 @@
 "use client"
 
-import { BoxesIcon, ImageIcon, PackageIcon, XIcon } from "lucide-react"
+import { BoxesIcon, ImageIcon, PackageIcon, SlidersHorizontalIcon, XIcon } from "lucide-react"
 import { useMemo, useRef, useState } from "react"
 
 import { EditPanel, EditPanelFields, EditPanelSection } from "@/components/eq/edit-panel"
@@ -24,16 +24,18 @@ import {
   normalizePrefix,
   onboardingService,
   PREFIX_MAX_LENGTH,
-  prefixFor,
+  renameDraft,
   toEquipmentDraft,
   toEquipmentInput,
   validateEquipment,
+  type CustomFields,
   type EquipmentDraft,
   type EquipmentItem,
   type PricingDraft,
   type RateKind,
 } from "@/lib/onboarding"
 
+import { OnlineSettings } from "./online-settings"
 import { kindOfError, PricingEditor } from "./pricing-editor"
 import { UnitList } from "./unit-list"
 
@@ -56,6 +58,24 @@ const CATEGORY_ITEMS = [
   ...EQUIPMENT_CATEGORIES.map((c) => ({ value: c.label, label: c.label })),
 ]
 
+type Section = "equipment" | "units" | "rates" | "rules" | "other"
+
+/** The panel section a field error sits in. */
+function sectionOf(path: string): Section {
+  if (path === "name") return "equipment"
+  if (path === "units" || path === "codePrefix" || path.startsWith("unit.")) return "units"
+  if (path.startsWith("online.")) return "other"
+  return kindOfError(path) === "rules" ? "rules" : "rates"
+}
+
+const NONE_REVEALED: Record<Section, number> = {
+  equipment: 0,
+  units: 0,
+  rates: 0,
+  rules: 0,
+  other: 0,
+}
+
 const readAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -74,6 +94,10 @@ export function EquipmentPanel({
   item,
   itemsBefore,
   takenCodes,
+  takenSlugs,
+  urlBase,
+  liveHref,
+  customFields,
   onSaved,
 }: {
   open: boolean
@@ -84,6 +108,13 @@ export function EquipmentPanel({
   itemsBefore: EquipmentItem[]
   /** Unit codes of every other item; a unit's own code can't repeat one. */
   takenCodes: Set<string>
+  /** Booking page addresses of every other item. */
+  takenSlugs: Set<string>
+  /** "https://…/product/"; undefined while the account loads. */
+  urlBase?: string
+  /** The item's live page on the booking page (saved items only). */
+  liveHref?: string
+  customFields?: CustomFields
   onSaved: (item: EquipmentItem, added: boolean) => void
 }) {
   const [draft, setDraft] = useState<EquipmentDraft>(() => toEquipmentDraft(item))
@@ -91,10 +122,13 @@ export function EquipmentPanel({
   const [photoError, setPhotoError] = useState<string>()
   const [saving, setSaving] = useState<"stay" | "close" | null>(null)
   const [tab, setTab] = useState<RateKind>(() => firstTab(draft.pricing))
+  // Only the first section starts open; a save with errors opens the sections that have them.
+  const [revealed, setRevealed] = useState(NONE_REVEALED)
   const formRef = useRef<HTMLFormElement>(null)
 
   const first = firstNumber(itemsBefore, draft.codePrefix)
-  const check = (d: EquipmentDraft) => validateEquipment(d, { firstNumber: first, takenCodes })
+  const check = (d: EquipmentDraft) =>
+    validateEquipment(d, { firstNumber: first, takenCodes, takenSlugs })
   const errors = showErrors ? check(draft) : {}
   const units = useMemo(() => draftUnits(draft, first), [draft, first])
   const update = (patch: Partial<EquipmentDraft>) => setDraft((d) => ({ ...d, ...patch }))
@@ -103,6 +137,12 @@ export function EquipmentPanel({
     const problems = Object.keys(check(draft))
     if (problems.length > 0) {
       setShowErrors(true)
+      const sections = new Set(problems.map(sectionOf))
+      setRevealed((r) => {
+        const next = { ...r }
+        for (const section of sections) next[section] += 1
+        return next
+      })
       // An error in a closed rate tab: open that tab so focus can reach the field.
       const kind = problems.map(kindOfError).find((k) => k && k !== "rules")
       if (kind && kind !== "rules") setTab(kind)
@@ -194,7 +234,11 @@ export function EquipmentPanel({
           void save(false)
         }}
       >
-        <EditPanelSection title="Equipment" icon={<PackageIcon aria-hidden="true" />}>
+        <EditPanelSection
+          key={`equipment-${revealed.equipment}`}
+          title="Equipment"
+          icon={<PackageIcon aria-hidden="true" />}
+        >
           <EditPanelFields>
             <FormField label="Name" required error={errors.name}>
               {(field) => (
@@ -204,7 +248,7 @@ export function EquipmentPanel({
                   maxLength={NAME_MAX_LENGTH}
                   placeholder="e.g. Trek Marlin 7"
                   value={draft.name}
-                  onChange={(e) => update({ name: e.target.value })}
+                  onChange={(e) => setDraft((d) => renameDraft(d, e.target.value))}
                 />
               )}
             </FormField>
@@ -217,19 +261,9 @@ export function EquipmentPanel({
                 <Select
                   items={CATEGORY_ITEMS}
                   value={draft.parentCategory || NO_PARENT}
-                  onValueChange={(value) => {
-                    const parentCategory = value === NO_PARENT ? "" : String(value ?? "")
-                    setDraft((d) => ({
-                      ...d,
-                      parentCategory,
-                      // Follow the category until the customer types their own prefix.
-                      codePrefix:
-                        prefixFor(parentCategory) &&
-                        (!d.codePrefix || d.codePrefix === prefixFor(d.parentCategory))
-                          ? prefixFor(parentCategory)
-                          : d.codePrefix,
-                    }))
-                  }}
+                  onValueChange={(value) =>
+                    update({ parentCategory: value === NO_PARENT ? "" : String(value ?? "") })
+                  }
                 >
                   <SelectTrigger className="w-full" {...field}>
                     <SelectValue />
@@ -283,7 +317,12 @@ export function EquipmentPanel({
           </EditPanelFields>
         </EditPanelSection>
 
-        <EditPanelSection title="Units" icon={<BoxesIcon aria-hidden="true" />}>
+        <EditPanelSection
+          key={`units-${revealed.units}`}
+          defaultOpen={revealed.units > 0}
+          title="Units"
+          icon={<BoxesIcon aria-hidden="true" />}
+        >
           <div className="flex flex-col gap-4">
             <EditPanelFields>
               <FormField
@@ -310,7 +349,7 @@ export function EquipmentPanel({
                 description={
                   draft.codePrefix.length >= 2
                     ? `Units get codes from ${draft.codePrefix}-${String(first).padStart(3, "0")}; you can change each unit's code below.`
-                    : "Units get codes like BIK-001. Letters and digits."
+                    : "Units get codes like TREKM-001: the first letters of the name. Letters and digits."
                 }
                 error={errors.codePrefix}
               >
@@ -343,7 +382,24 @@ export function EquipmentPanel({
           errors={errors}
           tab={tab}
           onTabChange={setTab}
+          revealed={revealed}
         />
+
+        <EditPanelSection
+          key={`other-${revealed.other}`}
+          defaultOpen={revealed.other > 0}
+          title="Other settings"
+          icon={<SlidersHorizontalIcon aria-hidden="true" />}
+        >
+          <OnlineSettings
+            value={draft.online}
+            onChange={(online) => update({ online })}
+            errors={errors}
+            urlBase={urlBase}
+            liveHref={item && item.online?.visible !== false ? liveHref : undefined}
+            customFields={customFields}
+          />
+        </EditPanelSection>
       </form>
     </EditPanel>
   )

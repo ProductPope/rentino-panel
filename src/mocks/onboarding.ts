@@ -1,4 +1,5 @@
 import { equipmentTotals, type EquipmentItem } from "@/lib/onboarding/equipment"
+import type { CustomFields } from "@/lib/onboarding/online"
 import { emptyPricing, type Pricing, type RateTier } from "@/lib/onboarding/pricing"
 import {
   OnboardingError,
@@ -102,6 +103,24 @@ const tier = (id: string, from: number, to: number | null, price: number): RateT
 })
 
 /** Three examples on demo data to start from (the customer can remove them). */
+/** The account's custom fields (managed in Settings once that section ships). */
+const CUSTOM_FIELDS: CustomFields = {
+  description: [
+    { id: "frame-size", label: "Frame size" },
+    { id: "wheel-size", label: "Wheel size" },
+    { id: "weight", label: "Weight" },
+    { id: "seats", label: "Seats" },
+    { id: "engine", label: "Engine" },
+  ],
+  checkout: [
+    { id: "rider-height", label: "Rider height" },
+    { id: "shoe-size", label: "Shoe size" },
+    { id: "date-of-birth", label: "Date of birth" },
+    { id: "driving-licence", label: "Driving licence number" },
+    { id: "hotel", label: "Hotel or address in town" },
+  ],
+}
+
 function seedEquipment(): EquipmentItem[] {
   return [
     {
@@ -136,6 +155,15 @@ function seedEquipment(): EquipmentItem[] {
         ],
       },
       photoUrl: "/demo/equipment/trek-marlin-7.webp",
+      online: {
+        visible: true,
+        slug: "trek-marlin-7",
+        descriptions: {
+          en: 'A light trail hardtail with a 29" wheel and hydraulic disc brakes. Helmet included.',
+        },
+        descriptionFields: ["frame-size", "wheel-size"],
+        checkoutFields: ["rider-height"],
+      },
       demo: true,
     },
     {
@@ -282,6 +310,11 @@ export const mockOnboardingService: OnboardingService = {
         : [...items, item]
     )
     return item
+  },
+
+  async listCustomFields() {
+    await delay()
+    return CUSTOM_FIELDS
   },
 
   async removeEquipment(id) {

@@ -9,14 +9,39 @@ const rows = (page: Page) => list(page).locator(":scope > li")
 const row = (page: Page, name: string) => rows(page).filter({ hasText: name })
 const panel = (page: Page) => page.getByRole("dialog")
 
-async function openAddPanel(page: Page) {
+const SECTIONS = ["Units", "Rental rates", "Dynamic pricing", "Other settings"]
+
+/** Sections after the first start collapsed: open them. */
+const expandAll = (page: Page) => expand(page, SECTIONS)
+
+async function openAddPanel(page: Page, { expand = true } = {}) {
   await page.getByRole("button", { name: "Add equipment" }).first().click()
   await expect(panel(page)).toBeVisible()
+  if (expand) await expandAll(page)
   return panel(page)
+}
+
+/** Items start collapsed: open the row, then its panel. */
+async function editItem(page: Page, name: string, { expand = true } = {}) {
+  const trigger = page.getByRole("button", { name: new RegExp(`^${name}`) })
+  if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click()
+  await page.getByRole("button", { name: `Edit prices and details of ${name}` }).click()
+  await expect(panel(page)).toBeVisible()
+  if (expand) await expandAll(page)
+  return panel(page)
+}
+
+async function expand(page: Page, names: string[]) {
+  for (const name of names) {
+    const trigger = panel(page).getByRole("button", { name, exact: true })
+    if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click()
+    await expect(trigger).toHaveAttribute("aria-expanded", "true")
+  }
 }
 
 async function fillItem(page: Page, name: string, units = "14", price = "18") {
   const p = panel(page)
+  await expand(page, ["Units", "Rental rates"])
   await p.getByRole("textbox", { name: "Name" }).fill(name)
   await p.getByRole("combobox", { name: "Parent category" }).click()
   await page.getByRole("option", { name: "Bikes", exact: true }).click()
@@ -50,8 +75,13 @@ test.describe("demo examples", () => {
     await expect(page.getByRole("alert").filter({ hasText: "Add at least one item" })).toBeVisible()
   })
 
-  test("an item opens and closes from the keyboard", async ({ page }) => {
+  test("an item opens and closes from the keyboard; all start closed", async ({ page }) => {
     await open(page, URL)
+    for (const name of ["Trek Marlin 7", "Club Car Tempo", "Wilson Pro Staff"])
+      await expect(page.getByRole("button", { name: new RegExp(`^${name}`) })).toHaveAttribute(
+        "aria-expanded",
+        "false"
+      )
     const trigger = page.getByRole("button", { name: /^Club Car Tempo/ })
     await expect(trigger).toHaveAttribute("aria-expanded", "false")
     await trigger.focus()
@@ -77,10 +107,7 @@ test.describe("demo examples", () => {
 test.describe("price list in the panel", () => {
   test("an example opens with its rates in tabs and its rules", async ({ page }) => {
     await open(page, URL)
-    await page
-      .getByRole("button", { name: "Edit prices and details of Trek Marlin 7 Mountain Bike" })
-      .click()
-    const p = panel(page)
+    const p = await editItem(page, "Trek Marlin 7 Mountain Bike")
     const tabs = p.getByRole("tablist", { name: "Rate types" })
     await expect(tabs.getByRole("tab", { name: /Daily/ })).toHaveAttribute("aria-selected", "true")
     await expect(tabs.getByRole("tab", { name: /Daily/ })).toHaveAccessibleName(/3 set/)
@@ -176,6 +203,34 @@ test.describe("price list in the panel", () => {
 })
 
 test.describe("side panel", () => {
+  test("only the first section starts open; a save opens the sections with errors", async ({
+    page,
+  }) => {
+    await open(page, URL)
+    const p = await openAddPanel(page, { expand: false })
+    await expect(p.getByRole("button", { name: "Equipment", exact: true })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    )
+    for (const name of SECTIONS)
+      await expect(p.getByRole("button", { name, exact: true })).toHaveAttribute(
+        "aria-expanded",
+        "false"
+      )
+    await p.getByRole("textbox", { name: "Name" }).fill("Kayak")
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    // The daily price is missing: its section opens and the field takes focus.
+    await expect(p.getByRole("textbox", { name: "Price per day" })).toBeFocused()
+    await expect(p.getByRole("button", { name: "Rental rates", exact: true })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    )
+    await expect(p.getByRole("button", { name: "Units", exact: true })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    )
+  })
+
   test("errors at the fields after the first save; focus on the first one", async ({ page }) => {
     await open(page, URL)
     const p = await openAddPanel(page)
@@ -187,18 +242,24 @@ test.describe("side panel", () => {
     await expect(p.getByText("Enter a price.")).toBeVisible()
   })
 
-  test("add an item: the category suggests the code; it joins the list", async ({ page }) => {
+  test("add an item: the code is the first five letters of the name; it joins the list", async ({
+    page,
+  }) => {
     await open(page, URL)
     const p = await openAddPanel(page)
     await fillItem(page, "City bike")
-    await expect(p.getByRole("textbox", { name: "Code" })).toHaveValue("BIK")
+    await expect(p.getByRole("textbox", { name: "Code" })).toHaveValue("CITYB")
     await expect(
-      p.getByText("Units get codes from BIK-002; you can change each unit's code below.")
+      p.getByText("Units get codes from CITYB-001; you can change each unit's code below.")
     ).toBeVisible()
+    // A code typed by hand stays when the name changes.
+    await p.getByRole("textbox", { name: "Code" }).fill("BIK")
+    await p.getByRole("textbox", { name: "Name" }).fill("City bike 2")
+    await expect(p.getByRole("textbox", { name: "Code" })).toHaveValue("BIK")
     await p.getByRole("button", { name: "Add equipment" }).click()
     await expect(panel(page)).toBeHidden()
     // Numbering continues after the demo bike: BIK-002…BIK-015.
-    await expect(row(page, "City bike")).toContainText("14 units: BIK-002…BIK-015")
+    await expect(row(page, "City bike 2")).toContainText("14 units: BIK-002…BIK-015")
     await expect(row(page, "City bike")).not.toContainText("Demo data")
   })
 
@@ -215,10 +276,7 @@ test.describe("side panel", () => {
 
   test("editing an example makes it the customer's own", async ({ page }) => {
     await open(page, URL)
-    await page
-      .getByRole("button", { name: "Edit prices and details of Trek Marlin 7 Mountain Bike" })
-      .click()
-    const p = panel(page)
+    const p = await editItem(page, "Trek Marlin 7 Mountain Bike")
     await expect(p.getByText("This is a demo example.")).toBeVisible()
     await p.getByRole("textbox", { name: "Number of units" }).fill("5")
     await p.getByRole("button", { name: "Save" }).click()
@@ -260,10 +318,7 @@ test.describe("units", () => {
       "base64"
     ),
   }
-  const editTrek = (page: Page) =>
-    page
-      .getByRole("button", { name: "Edit prices and details of Trek Marlin 7 Mountain Bike" })
-      .click()
+  const editTrek = (page: Page) => editItem(page, "Trek Marlin 7 Mountain Bike")
 
   test("a unit gets its own code, name and photo; others show the equipment's", async ({
     page,
@@ -332,6 +387,76 @@ test.describe("units", () => {
       await unit(page, "BIK-001").getByRole("button", { name: "Edit unit BIK-001" }).click()
       await expect(unit(page, "BIK-001").getByRole("textbox", { name: "Unit code" })).toBeVisible()
       await expectNoAxeViolations(page, '[role="dialog"]')
+    })
+})
+
+test.describe("other settings", () => {
+  test("hidden online: the list says so", async ({ page }) => {
+    await open(page, URL)
+    const p = await openAddPanel(page)
+    await fillItem(page, "Kayak", "2", "30")
+    await expect(p.getByRole("textbox", { name: "Booking page address" })).toHaveValue("kayak")
+    await expect(p.getByText("https://bikesmallorca.rentino.app/product/kayak")).toBeVisible()
+    await p.getByRole("switch", { name: "Show on your booking page" }).click()
+    await expect(p.getByText("Hidden online. You can still book it")).toBeVisible()
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    await expect(panel(page)).toBeHidden()
+    await expect(row(page, "Kayak")).toContainText("Hidden online")
+  })
+
+  test("an address another item uses is an error; it opens the section", async ({ page }) => {
+    await open(page, URL)
+    const p = await openAddPanel(page, { expand: false })
+    await fillItem(page, "Trek Marlin 7")
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    const address = p.getByRole("textbox", { name: "Booking page address" })
+    await expect(address).toBeFocused()
+    await expect(p.getByText("Another item uses “trek-marlin-7”.")).toBeVisible()
+    await address.fill("Trek Marlin 7 Blue")
+    await expect(address).toHaveValue("trek-marlin-7-blue")
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    await expect(panel(page)).toBeHidden()
+  })
+
+  test("descriptions per language and custom fields are kept", async ({ page }) => {
+    await open(page, URL)
+    const p = await editItem(page, "Trek Marlin 7 Mountain Bike")
+    const languages = p.getByRole("tablist", { name: "Description" })
+    await expect(languages.getByRole("tab", { name: /^EN/ })).toHaveAccessibleName(/written/)
+    await languages.getByRole("tab", { name: /^PL/ }).click()
+    await p.getByRole("textbox", { name: "Description in Polish" }).fill("Lekki rower górski.")
+    await languages.getByRole("tab", { name: /^AR/ }).click()
+    await expect(p.getByRole("textbox", { name: "Description in Arabic" })).toHaveAttribute(
+      "dir",
+      "rtl"
+    )
+    const picker = p.getByRole("combobox", { name: "Custom checkout fields" })
+    await expect(picker).toContainText("Rider height")
+    await picker.click()
+    await page.getByRole("option", { name: "Shoe size" }).click()
+    await page.keyboard.press("Escape")
+    await expect(picker).toContainText("Rider height, Shoe size")
+    await p.getByRole("button", { name: "Save" }).click()
+    await expect(panel(page)).toBeHidden()
+
+    const again = await editItem(page, "Trek Marlin 7 Mountain Bike")
+    await expect(
+      again.getByRole("tablist", { name: "Description" }).getByRole("tab", { name: /^PL/ })
+    ).toHaveAccessibleName(/written/)
+    await expect(again.getByRole("combobox", { name: "Custom checkout fields" })).toContainText(
+      "Rider height, Shoe size"
+    )
+  })
+
+  for (const theme of THEMES)
+    test(`axe on other settings, with the field list open — ${theme}`, async ({ page }) => {
+      await open(page, URL, theme)
+      const p = await editItem(page, "Trek Marlin 7 Mountain Bike")
+      await expect(p.getByRole("link", { name: /See it live/ })).toBeVisible()
+      await expectNoAxeViolations(page, '[role="dialog"]')
+      await p.getByRole("combobox", { name: "Custom description fields" }).click()
+      await expect(page.getByRole("option", { name: "Frame size" })).toBeVisible()
+      await expectNoAxeViolations(page)
     })
 })
 
