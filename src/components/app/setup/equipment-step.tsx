@@ -29,13 +29,12 @@ import {
   codeRange,
   equipmentTotals,
   onboardingService,
-  parsePrice,
-  priceError,
-  priceSummary,
+  pricingSummary,
   type EquipmentItem,
 } from "@/lib/onboarding"
 
-import { EquipmentPanel, EquipmentThumbnail, PriceInput } from "./equipment-panel"
+import { EquipmentPanel, EquipmentThumbnail } from "./equipment-panel"
+import { PricingBreakdown } from "./pricing-breakdown"
 
 type Load = { state: "loading" } | { state: "error" } | { state: "ready"; items: EquipmentItem[] }
 
@@ -43,7 +42,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 
 /**
  * Setup step 3 when the customer adds equipment by hand: the list looks like the draft review
- * (one panel per item, prices editable in place); items are added in the side EditPanel.
+ * (one panel per item with its price list); items are added and edited in the side EditPanel.
  */
 export function EquipmentStep() {
   const router = useRouter()
@@ -119,7 +118,7 @@ export function EquipmentStep() {
     <>
       <PageHeader
         title="Your equipment"
-        description="Add what you rent out and set its prices. Click a price to change it."
+        description="Add what you rent out and set its prices: rates per hour, day, week or month, packages, and price rules for seasons or weekends."
         actions={
           <Button variant="outline" onClick={() => openPanel()}>
             <PlusIcon data-icon="inline-start" aria-hidden="true" />
@@ -203,7 +202,6 @@ export function EquipmentStep() {
                     item={item}
                     codes={range ? codeRange(range) : ""}
                     defaultOpen={index === 0}
-                    onChange={replace}
                     onEdit={() => openPanel(item)}
                     onRemove={() => void remove(item)}
                   />
@@ -247,14 +245,12 @@ function EquipmentRow({
   item,
   codes,
   defaultOpen,
-  onChange,
   onEdit,
   onRemove,
 }: {
   item: EquipmentItem
   codes: string
   defaultOpen: boolean
-  onChange: (item: EquipmentItem) => void
   onEdit: () => void
   onRemove: () => void
 }) {
@@ -278,29 +274,16 @@ function EquipmentRow({
                 <span className="font-mono text-caption">{codes}</span>
               </span>
             </span>
-            <span className="text-body text-foreground">{priceSummary(item)}</span>
+            <span className="text-body text-foreground">{pricingSummary(item.pricing)}</span>
           </CollapsibleTrigger>
         </h2>
         <CollapsibleContent className="px-(--card-spacing)">
           <div className="flex flex-col gap-4 border-t border-border pt-4 sm:pl-8">
-            <div className="flex flex-wrap items-start gap-x-8 gap-y-4 *:w-48">
-              <InlinePrice
-                item={item}
-                field="pricePerDay"
-                label="Price per day"
-                onSaved={onChange}
-              />
-              <InlinePrice
-                item={item}
-                field="pricePerWeek"
-                label="Price per week"
-                onSaved={onChange}
-              />
-            </div>
+            <PricingBreakdown pricing={item.pricing} />
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={onEdit}>
                 <PencilIcon data-icon="inline-start" aria-hidden="true" />
-                Edit details
+                Edit prices and details
                 <span className="sr-only">of {item.name}</span>
               </Button>
               <Button size="sm" variant="destructive" onClick={onRemove}>
@@ -313,50 +296,5 @@ function EquipmentRow({
         </CollapsibleContent>
       </Collapsible>
     </li>
-  )
-}
-
-/** A price changed in place: saved when the field loses focus, if it's valid. */
-function InlinePrice({
-  item,
-  field,
-  label,
-  onSaved,
-}: {
-  item: EquipmentItem
-  field: "pricePerDay" | "pricePerWeek"
-  label: string
-  onSaved: (item: EquipmentItem) => void
-}) {
-  const initial = item[field] == null ? "" : String(item[field])
-  const [value, setValue] = useState(initial)
-  const [error, setError] = useState<string>()
-  const required = field === "pricePerDay"
-
-  async function commit() {
-    const problem = priceError(value, required)
-    setError(problem)
-    if (problem || value.trim() === initial) return
-    const price = parsePrice(value)
-    try {
-      onSaved(await onboardingService.putEquipment({ ...item, [field]: price }))
-    } catch {
-      toast.error("We couldn't save the price. Try again.")
-    }
-  }
-
-  return (
-    <PriceInput
-      label={label}
-      description={required ? undefined : "Optional"}
-      required={required}
-      value={value}
-      error={error}
-      onChange={(next) => {
-        setValue(next)
-        if (error) setError(priceError(next, required))
-      }}
-      onBlur={() => void commit()}
-    />
   )
 }

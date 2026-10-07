@@ -33,7 +33,6 @@ import {
   type OnboardingStatus,
   type SetupArea,
 } from "@/lib/onboarding"
-import { formatMoney } from "@/lib/tenant"
 
 import { EquipmentFirst } from "./equipment-first"
 
@@ -191,9 +190,7 @@ function BookingPreview({ status, items }: { status: OnboardingStatus; items: Eq
                 )}
                 <span className="flex flex-col gap-0.5 p-3">
                   <span className="text-label text-foreground">{item.name}</span>
-                  <span className="text-body text-muted-foreground">
-                    from {formatMoney(item.pricePerDay)} / day
-                  </span>
+                  <span className="text-body text-muted-foreground">{item.price}</span>
                 </span>
               </li>
             ))}
