@@ -46,9 +46,23 @@ describe("booking page", () => {
     expect(initials("Bikes Mallorca")).toBe("BM")
   })
 
-  it("previews only the customer's own items", () => {
+  it("previews only the customer's own items that are shown online", () => {
+    const hidden = item({
+      id: "h",
+      online: {
+        visible: false,
+        slug: "h",
+        descriptions: {},
+        descriptionFields: [],
+        checkoutFields: [],
+      },
+    })
     expect(
-      bookingPreviewItems([item({ id: "d", demo: true }), item({ id: "a", photoUrl: "/a.webp" })])
+      bookingPreviewItems([
+        item({ id: "d", demo: true }),
+        hidden,
+        item({ id: "a", photoUrl: "/a.webp" }),
+      ])
     ).toEqual([{ id: "a", name: "City bike", photoUrl: "/a.webp", price: "from $18.00 / day" }])
   })
 })

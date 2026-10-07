@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { toOnlineDraft } from "./online"
 import { emptyPricing, newPricingDraft } from "./pricing"
 import {
   assignCodes,
@@ -12,6 +13,7 @@ import {
   normalizePrefix,
   fromPrice,
   prefixFor,
+  renameDraft,
   toEquipmentDraft,
   toEquipmentInput,
   validateEquipment,
@@ -26,6 +28,7 @@ const valid: EquipmentDraft = {
   codePrefix: "BIK",
   unitOverrides: [],
   pricing: { ...newPricingDraft(), daily: [{ id: "d", from: "1", to: "", price: "35" }] },
+  online: toOnlineDraft(undefined, "Trek Marlin 7"),
 }
 
 const item = (patch: Partial<EquipmentItem>): EquipmentItem => ({
@@ -52,6 +55,7 @@ describe("validateEquipment", () => {
         codePrefix: "B",
         pricing: newPricingDraft(),
         unitOverrides: [],
+        online: toOnlineDraft(undefined, "x"),
       })
     ).toEqual({
       name: "Enter a name.",
@@ -82,11 +86,36 @@ describe("prices and prefixes", () => {
       units: 14,
       codePrefix: "BIK",
       pricing: { ...emptyPricing(), daily: [{ id: "d", from: 1, to: null, price: 35 }] },
+      online: {
+        visible: true,
+        slug: "trek-marlin-7",
+        descriptions: {},
+        descriptionFields: [],
+        checkoutFields: [],
+      },
     })
     expect(toEquipmentDraft({ id: "1", ...input })).toMatchObject({
       units: "14",
       pricing: { daily: [{ id: "d", from: "1", to: "", price: "35" }] },
     })
+  })
+})
+
+describe("renameDraft", () => {
+  it("the code and the address follow the name until the customer types their own", () => {
+    const draft = renameDraft(toEquipmentDraft(), "Złota Łódź 2")
+    expect(draft.codePrefix).toBe("ZLOTA")
+    expect(draft.online.slug).toBe("zlota-lodz-2")
+    const own = renameDraft(
+      { ...draft, codePrefix: "BOAT", online: { ...draft.online, slug: "boat" } },
+      "Kayak"
+    )
+    expect(own.codePrefix).toBe("BOAT")
+    expect(own.online.slug).toBe("boat")
+  })
+
+  it("existing items keep their code when renamed", () => {
+    expect(renameDraft(valid, "Trek Marlin 8").codePrefix).toBe("BIK")
   })
 })
 

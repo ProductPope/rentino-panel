@@ -1,4 +1,5 @@
 import { equipmentTotals, fromPrice, type EquipmentItem } from "./equipment"
+import { isOnline } from "./online"
 import { settingsSummary } from "./settings"
 import type { OnboardingStatus } from "./types"
 
@@ -23,7 +24,7 @@ export const initials = (name: string) =>
 /** What the booking page shows: the customer's own items (demo examples were dropped on approve). */
 export function bookingPreviewItems(items: EquipmentItem[]) {
   return items
-    .filter((i) => !i.demo)
+    .filter((i) => !i.demo && isOnline(i))
     .map((i) => ({ id: i.id, name: i.name, photoUrl: i.photoUrl, price: fromPrice(i) }))
 }
 

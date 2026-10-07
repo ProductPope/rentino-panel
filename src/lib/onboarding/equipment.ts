@@ -9,6 +9,15 @@ import {
   type Pricing,
   type PricingDraft,
 } from "./pricing"
+import {
+  prefixFromName,
+  slugify,
+  toOnline,
+  toOnlineDraft,
+  validateOnline,
+  type OnlineBooking,
+  type OnlineBookingDraft,
+} from "./online"
 
 /**
  * Equipment the customer adds by hand in the setup wizard (step "Equipment and prices").
@@ -28,6 +37,8 @@ export interface EquipmentItem {
   photoUrl?: string
   /** Units with their own code, name or photo; the others use the item's. */
   unitOverrides?: UnitOverride[]
+  /** Booking page: shown or hidden, address, descriptions, custom fields. */
+  online?: OnlineBooking
   /** An example on demo data: shown to start from, never saved by approving. */
   demo?: boolean
 }
@@ -92,6 +103,7 @@ export interface EquipmentDraft {
   pricing: PricingDraft
   photoUrl?: string
   unitOverrides: UnitOverrideDraft[]
+  online: OnlineBookingDraft
 }
 
 /** Errors by field: `name`, `units`, … and pricing paths such as `daily.0.price`, `rules.1.value`. */
@@ -106,6 +118,7 @@ export function toEquipmentDraft(item?: EquipmentItem): EquipmentDraft {
       codePrefix: "",
       pricing: newPricingDraft(),
       unitOverrides: [],
+      online: toOnlineDraft(undefined, ""),
     }
   return {
     name: item.name,
@@ -120,6 +133,7 @@ export function toEquipmentDraft(item?: EquipmentItem): EquipmentDraft {
       name: o.name ?? "",
       photoUrl: o.photoUrl,
     })),
+    online: toOnlineDraft(item.online, item.name),
   }
 }
 
@@ -130,9 +144,24 @@ const changes = (o: UnitOverrideDraft) => Boolean(o.code.trim() || o.name.trim()
  * Checks the item, its units and its price list. `options.firstNumber` is where this item's
  * default unit codes start; `options.takenCodes` are the unit codes of every other item.
  */
+/**
+ * A new name. The code and the address follow the name (first five letters, a slug) until the
+ * customer types their own.
+ */
+export function renameDraft(draft: EquipmentDraft, name: string): EquipmentDraft {
+  const prefixFollows = !draft.codePrefix || draft.codePrefix === prefixFromName(draft.name)
+  const slugFollows = !draft.online.slug || draft.online.slug === slugify(draft.name)
+  return {
+    ...draft,
+    name,
+    codePrefix: prefixFollows ? prefixFromName(name) : draft.codePrefix,
+    online: slugFollows ? { ...draft.online, slug: slugify(name) } : draft.online,
+  }
+}
+
 export function validateEquipment(
   draft: EquipmentDraft,
-  options: { firstNumber?: number; takenCodes?: Set<string> } = {}
+  options: { firstNumber?: number; takenCodes?: Set<string>; takenSlugs?: Set<string> } = {}
 ): EquipmentErrors {
   const errors: EquipmentErrors = {}
   if (!draft.name.trim()) errors.name = "Enter a name."
@@ -155,7 +184,11 @@ export function validateEquipment(
         errors[`${at}.name`] = `Use at most ${NAME_MAX_LENGTH} characters.`
     }
   }
-  return { ...errors, ...validatePricing(draft.pricing) }
+  return {
+    ...errors,
+    ...validateOnline(draft.online, options.takenSlugs),
+    ...validatePricing(draft.pricing),
+  }
 }
 
 /** A valid draft as the input to save. Call only when `validateEquipment` returns no errors. */
@@ -178,6 +211,7 @@ export function toEquipmentInput(draft: EquipmentDraft): EquipmentInput {
     pricing: toPricing(draft.pricing),
     ...(draft.photoUrl ? { photoUrl: draft.photoUrl } : {}),
     ...(overrides.length ? { unitOverrides: overrides } : {}),
+    online: toOnline(draft.online),
   }
 }
 

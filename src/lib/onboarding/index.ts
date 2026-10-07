@@ -3,6 +3,7 @@ import { mockOnboardingService } from "@/mocks/onboarding"
 import type { OnboardingService } from "./types"
 
 export * from "./equipment"
+export * from "./online"
 export * from "./pricing"
 export * from "./rules"
 export * from "./settings"
