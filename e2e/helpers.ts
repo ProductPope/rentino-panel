@@ -25,6 +25,8 @@ export const PAGES = [
   { name: "Discount codes — empty", path: "/settings/discount-codes?mock=empty" },
   { name: "Discount codes — load error", path: "/settings/discount-codes?mock=error" },
   { name: "Booking page", path: "/booking-page" },
+  { name: "Docs — home", path: "/docs" },
+  { name: "Docs — a screen page (tables, images)", path: "/docs/screens/setup-3-equipment" },
 ] as const
 
 export const THEMES = ["light", "dark"] as const

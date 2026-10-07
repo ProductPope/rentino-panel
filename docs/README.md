@@ -6,8 +6,9 @@ backend would provide is mocked behind typed interfaces. These docs are for fron
 take the screens and the interfaces from here. They also carry guidelines for whoever builds the
 backend.
 
-Docs grow with the panel: every new screen gets its own page (see
-[Adding a screen](#adding-a-screen)).
+Read them on the site, <https://rentino-panel.vercel.app/docs>, or here on GitHub — it's the same
+Markdown ([how the site works](./screens/docs-site.md)). Docs grow with the panel: every new screen
+gets its own page (see [Adding a screen](#adding-a-screen)).
 
 ## Contents
 

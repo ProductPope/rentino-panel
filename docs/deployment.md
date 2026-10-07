@@ -15,6 +15,9 @@ other's changes.
    on the PR by the Vercel bot.
 5. Put the production URL in the [README](../README.md) ("Online prototype").
 
+**Done**: production is <https://rentino-panel.vercel.app>, the docs are at
+<https://rentino-panel.vercel.app/docs> (see [Docs site](./screens/docs-site.md)).
+
 ## What's in the repo for it
 
 - `vercel.json` — `X-Robots-Tag: noindex` on every response, so the prototype isn't indexed by

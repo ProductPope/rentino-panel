@@ -9,6 +9,8 @@ for (const theme of THEMES) {
     test(`2.4.7 focus visible — every Tab stop changes the screen (${name}, ${theme})`, async ({
       page,
     }) => {
+      // Each stop takes ~0.6 s (two screenshots); link-heavy pages (the docs) need more than 30 s.
+      test.setTimeout(60_000)
       await open(page, path, theme)
       await page.mouse.move(0, 0)
       const invisible: string[] = []
