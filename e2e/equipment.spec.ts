@@ -5,7 +5,7 @@ import { expectNoAxeViolations, open, THEMES } from "./helpers"
 const URL = "/welcome/setup/equipment"
 
 const list = (page: Page) => page.getByRole("list", { name: "Your equipment" })
-const rows = (page: Page) => list(page).getByRole("listitem")
+const rows = (page: Page) => list(page).locator(":scope > li")
 const row = (page: Page, name: string) => rows(page).filter({ hasText: name })
 const panel = (page: Page) => page.getByRole("dialog")
 
@@ -38,7 +38,9 @@ test.describe("demo examples", () => {
       await expect(row(page, name)).toContainText(code)
       await expect(row(page, name).locator("img")).toHaveJSProperty("complete", true)
     }
-    await expect(row(page, "Trek Marlin 7")).toContainText("$35.00 / day · $180.00 / week")
+    await expect(row(page, "Trek Marlin 7")).toContainText(
+      "from $7.00 / hour · from $26.00 / day · $180.00 / week · 2 price rules"
+    )
     await expect(page.getByText(/3 demo examples, not saved when you approve/)).toBeVisible()
   })
 
@@ -55,9 +57,11 @@ test.describe("demo examples", () => {
     await trigger.focus()
     await page.keyboard.press("Enter")
     await expect(trigger).toHaveAttribute("aria-expanded", "true")
-    await expect(
-      row(page, "Club Car Tempo").getByRole("textbox", { name: "Price per day" })
-    ).toBeVisible()
+    // The opened item shows its whole price list, read-only.
+    const cart = row(page, "Club Car Tempo")
+    await expect(cart.getByRole("region", { name: "Hourly packages" })).toContainText("4 hours")
+    await expect(cart.getByRole("region", { name: "Hourly packages" })).toContainText("$90.00")
+    await expect(cart.getByRole("region", { name: "Price rules" })).toContainText("+15% · Sat, Sun")
   })
 
   test("removing an example can be undone", async ({ page }) => {
@@ -70,21 +74,105 @@ test.describe("demo examples", () => {
   })
 })
 
-test.describe("prices in place", () => {
-  test("a valid price saves on leaving the field; a wrong one shows an error", async ({ page }) => {
+test.describe("price list in the panel", () => {
+  test("an example opens with its rates in tabs and its rules", async ({ page }) => {
     await open(page, URL)
-    const trek = row(page, "Trek Marlin 7")
-    const perDay = trek.getByRole("textbox", { name: "Price per day" })
-    await perDay.fill("abc")
-    await perDay.press("Tab")
-    await expect(perDay).toHaveAttribute("aria-invalid", "true")
-    await expect(trek.getByText("Enter an amount, e.g. 25 or 24.50.")).toBeVisible()
-    await perDay.fill("40")
-    await perDay.press("Tab")
-    await expect(trek).toContainText("$40.00 / day")
-    await page.reload()
-    await expect(row(page, "Trek Marlin 7")).toContainText("$40.00 / day")
+    await page
+      .getByRole("button", { name: "Edit prices and details of Trek Marlin 7 Mountain Bike" })
+      .click()
+    const p = panel(page)
+    const tabs = p.getByRole("tablist", { name: "Rate types" })
+    await expect(tabs.getByRole("tab", { name: /Daily/ })).toHaveAttribute("aria-selected", "true")
+    await expect(tabs.getByRole("tab", { name: /Daily/ })).toHaveAccessibleName(/3 set/)
+    const daily = p.getByRole("list", { name: "Daily ranges" })
+    await expect(daily.getByRole("listitem")).toHaveCount(3)
+    await expect(
+      daily.getByRole("listitem").nth(2).getByRole("textbox", { name: "Day to" })
+    ).toHaveValue("")
+    await tabs.getByRole("tab", { name: /Per hour/ }).click()
+    await expect(
+      p.getByRole("list", { name: "Per hour ranges" }).getByRole("listitem")
+    ).toHaveCount(2)
+    const rules = p.getByRole("list", { name: "Price rules" }).getByRole("listitem")
+    await expect(rules).toHaveCount(2)
+    await expect(rules.nth(1).getByRole("button", { name: "Saturday" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
   })
+
+  test("hourly ranges and a weekend rule; overlapping ranges are an error in their tab", async ({
+    page,
+  }) => {
+    await open(page, URL)
+    const p = await openAddPanel(page)
+    await fillItem(page, "City bike")
+    await p.getByRole("tab", { name: "Per hour" }).click()
+    await p.getByRole("button", { name: "Add a range" }).click()
+    const hours = p.getByRole("list", { name: "Per hour ranges" }).getByRole("listitem")
+    await hours.nth(0).getByRole("textbox", { name: "Hour to" }).fill("3")
+    await hours.nth(0).getByRole("textbox", { name: "Price per hour" }).fill("8")
+    await p.getByRole("button", { name: "Add a range" }).click()
+    await expect(hours.nth(1).getByRole("textbox", { name: "Hour from" })).toHaveValue("4")
+    await hours.nth(1).getByRole("textbox", { name: "Hour from" }).fill("2")
+    await hours.nth(1).getByRole("textbox", { name: "Price per hour" }).fill("6")
+
+    await p.getByRole("button", { name: "Add a rule" }).click()
+    const rule = p.getByRole("list", { name: "Price rules" }).getByRole("listitem").first()
+    await rule.getByRole("combobox", { name: "Date type" }).click()
+    await page.getByRole("option", { name: "Days of the week" }).click()
+    await rule.getByRole("button", { name: "Saturday" }).click()
+    await rule.getByRole("button", { name: "Sunday" }).click()
+    await rule.getByRole("textbox", { name: "Value" }).fill("10")
+
+    // Go to another tab, then save: the error opens its tab and gets focus.
+    await p.getByRole("tab", { name: /Daily/ }).click()
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    const from = hours.nth(1).getByRole("textbox", { name: "Hour from" })
+    await expect(from).toBeFocused()
+    await expect(p.getByText("Overlaps another range. Start after 3 hours.")).toBeVisible()
+    await expect(p.getByRole("tab", { name: /Per hour/ })).toHaveAccessibleName(/has errors/)
+
+    await from.fill("4")
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    await expect(panel(page)).toBeHidden()
+    await expect(row(page, "City bike")).toContainText(
+      "from $6.00 / hour · $18.00 / day · 1 price rule"
+    )
+  })
+
+  test("a rule needs a change and its dates or days", async ({ page }) => {
+    await open(page, URL)
+    const p = await openAddPanel(page)
+    await fillItem(page, "Kayak")
+    await p.getByRole("button", { name: "Add a rule" }).click()
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    await expect(p.getByRole("textbox", { name: "Value" })).toBeFocused()
+    await expect(p.getByText("Enter a change, e.g. 20 or -15.")).toBeVisible()
+    await expect(p.getByText("Choose the first and last day.")).toBeVisible()
+    await expect(p.getByText(/Rules add up before the final price/)).toBeVisible()
+  })
+
+  test("removing every rate is an error", async ({ page }) => {
+    await open(page, URL)
+    const p = await openAddPanel(page)
+    await fillItem(page, "Kayak")
+    await p.getByRole("button", { name: "Delete range 1" }).click()
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    await expect(p.getByText("Add at least one rate — for example a daily price.")).toBeVisible()
+  })
+
+  for (const theme of THEMES)
+    test(`axe with hourly ranges and a rule in the panel — ${theme}`, async ({ page }) => {
+      await open(page, URL, theme)
+      const p = await openAddPanel(page)
+      await p.getByRole("tab", { name: "Per hour" }).click()
+      await p.getByRole("button", { name: "Add a range" }).click()
+      await p.getByRole("button", { name: "Add a rule" }).click()
+      await p.getByRole("button", { name: "Add equipment" }).click()
+      await expect(p.getByText("Enter a change, e.g. 20 or -15.")).toBeVisible()
+      await expectNoAxeViolations(page, '[role="dialog"]')
+    })
 })
 
 test.describe("side panel", () => {
@@ -95,7 +183,7 @@ test.describe("side panel", () => {
     await expect(p.getByRole("textbox", { name: "Name" })).toBeFocused()
     await expect(p.getByText("Enter a name.")).toBeVisible()
     await expect(p.getByText("Choose a category.")).toBeVisible()
-    await expect(p.getByText("Enter a price per day.")).toBeVisible()
+    await expect(p.getByText("Enter a price.")).toBeVisible()
   })
 
   test("add an item: the category suggests the code; it joins the list", async ({ page }) => {
@@ -124,7 +212,9 @@ test.describe("side panel", () => {
 
   test("editing an example makes it the customer's own", async ({ page }) => {
     await open(page, URL)
-    await page.getByRole("button", { name: "Edit details of Trek Marlin 7 Mountain Bike" }).click()
+    await page
+      .getByRole("button", { name: "Edit prices and details of Trek Marlin 7 Mountain Bike" })
+      .click()
     const p = panel(page)
     await expect(p.getByText("This is a demo example.")).toBeVisible()
     await p.getByRole("textbox", { name: "Number of units" }).fill("5")
