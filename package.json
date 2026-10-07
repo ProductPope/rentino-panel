@@ -12,6 +12,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:e2e": "playwright test",
+    "lint:docs": "node scripts/check-docs.mjs",
+    "docs:screens": "playwright test -c scripts/docs/playwright.config.ts",
     "test": "vitest run"
   },
   "dependencies": {

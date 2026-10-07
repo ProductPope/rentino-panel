@@ -7,10 +7,10 @@ runs out, jobs fail without logs — on `main` too. Usage: GitHub → Settings �
 
 ## Workflows
 
-| Workflow           | When                                   | What                                                                                     |
-| ------------------ | -------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `ci.yml` (one job) | PR (not draft), push to `main`, manual | lint, tokens, format, typecheck, unit, decision-script tests, build, E2E, registry drift |
-| `registry.yml`     | weekly (Mon 06:17 UTC), manual         | `scripts/check-registry.sh` — catches new EQ-librium releases                            |
+| Workflow           | When                                   | What                                                                                           |
+| ------------------ | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `ci.yml` (one job) | PR (not draft), push to `main`, manual | lint, tokens, docs, format, typecheck, unit, decision-script tests, build, E2E, registry drift |
+| `registry.yml`     | weekly (Mon 06:17 UTC), manual         | `scripts/check-registry.sh` — catches new EQ-librium releases                                  |
 
 ## What CI skips, and the fallback
 
