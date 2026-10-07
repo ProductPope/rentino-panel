@@ -25,12 +25,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/sonner"
 import { SETUP_SETTINGS_HREF } from "@/config/navigation"
 import {
-  assignCodes,
   codeRange,
   equipmentTotals,
   onboardingService,
   pricingSummary,
+  unitsByItem,
   type EquipmentItem,
+  type Unit,
 } from "@/lib/onboarding"
 
 import { EquipmentPanel, EquipmentThumbnail } from "./equipment-panel"
@@ -71,7 +72,7 @@ export function EquipmentStep() {
   }, [fetchItems])
 
   const items = useMemo(() => (load.state === "ready" ? load.items : []), [load])
-  const codes = useMemo(() => assignCodes(items), [items])
+  const units = useMemo(() => unitsByItem(items), [items])
   const totals = equipmentTotals(items)
 
   const replace = useCallback((item: EquipmentItem) => {
@@ -85,6 +86,17 @@ export function EquipmentStep() {
     })
     setNothingToApprove(false)
   }, [])
+
+  // Unit codes continue after the items before the edited one (a new item goes last) and must not
+  // clash with any other item's codes.
+  const editing = useMemo(() => {
+    const at = panel.item ? items.findIndex((i) => i.id === panel.item?.id) : -1
+    const others = items.filter((i) => i.id !== panel.item?.id)
+    return {
+      before: at === -1 ? items : items.slice(0, at),
+      taken: new Set(others.flatMap((i) => (units.get(i.id) ?? []).map((u) => u.code))),
+    }
+  }, [items, units, panel.item])
 
   const openPanel = (item?: EquipmentItem) =>
     setPanel((p) => ({ open: true, item, session: p.session + 1 }))
@@ -194,19 +206,16 @@ export function EquipmentStep() {
                 .join(" · ")}
             </p>
             <ul aria-label="Your equipment" className="flex flex-col gap-4">
-              {items.map((item, index) => {
-                const range = codes.get(item.id)
-                return (
-                  <EquipmentRow
-                    key={item.id}
-                    item={item}
-                    codes={range ? codeRange(range) : ""}
-                    defaultOpen={index === 0}
-                    onEdit={() => openPanel(item)}
-                    onRemove={() => void remove(item)}
-                  />
-                )
-              })}
+              {items.map((item, index) => (
+                <EquipmentRow
+                  key={item.id}
+                  item={item}
+                  units={units.get(item.id) ?? []}
+                  defaultOpen={index === 0}
+                  onEdit={() => openPanel(item)}
+                  onRemove={() => void remove(item)}
+                />
+              ))}
             </ul>
           </>
         ))}
@@ -216,6 +225,8 @@ export function EquipmentStep() {
         open={panel.open}
         onOpenChange={(open) => setPanel((p) => ({ ...p, open }))}
         item={panel.item}
+        itemsBefore={editing.before}
+        takenCodes={editing.taken}
         onSaved={replace}
       />
 
@@ -243,13 +254,13 @@ export function EquipmentStep() {
 /** One item: a header that opens its prices (like a category of the draft review). */
 function EquipmentRow({
   item,
-  codes,
+  units,
   defaultOpen,
   onEdit,
   onRemove,
 }: {
   item: EquipmentItem
-  codes: string
+  units: Unit[]
   defaultOpen: boolean
   onEdit: () => void
   onRemove: () => void
@@ -270,8 +281,9 @@ function EquipmentRow({
                 {item.demo && <Badge variant="info">Demo data</Badge>}
               </span>
               <span className="text-body text-muted-foreground">
-                {item.category} · {plural(item.units, "unit", "units")}:{" "}
-                <span className="font-mono text-caption">{codes}</span>
+                {item.parentCategory && `${item.parentCategory} · `}
+                {plural(item.units, "unit", "units")}:{" "}
+                <span className="font-mono text-caption">{unitCodes(units)}</span>
               </span>
             </span>
             <span className="text-body text-foreground">{pricingSummary(item.pricing)}</span>
@@ -280,6 +292,7 @@ function EquipmentRow({
         <CollapsibleContent className="px-(--card-spacing)">
           <div className="flex flex-col gap-4 border-t border-border pt-4 sm:pl-8">
             <PricingBreakdown pricing={item.pricing} />
+            <CustomUnits units={units} />
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={onEdit}>
                 <PencilIcon data-icon="inline-start" aria-hidden="true" />
@@ -296,5 +309,44 @@ function EquipmentRow({
         </CollapsibleContent>
       </Collapsible>
     </li>
+  )
+}
+
+/** "BIK-001…BIK-003", or the codes themselves once a unit has its own. */
+function unitCodes(units: Unit[]) {
+  const first = units[0]
+  const last = units.at(-1)
+  if (!first || !last) return ""
+  if (!units.some((u) => u.ownCode)) return codeRange({ first: first.code, last: last.code })
+  const shown = units.slice(0, 3).map((u) => u.code)
+  return units.length > 3 ? `${shown.join(", ")} +${units.length - 3} more` : shown.join(", ")
+}
+
+/** Units with their own code, name or photo. */
+function CustomUnits({ units }: { units: Unit[] }) {
+  const custom = units.filter((u) => u.ownCode || u.ownName || u.ownPhoto)
+  if (custom.length === 0) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-label text-foreground">Units with their own details</h3>
+      <ul className="flex flex-col gap-2">
+        {custom.map((unit) => (
+          <li key={unit.position} className="flex items-center gap-3">
+            {unit.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a data URL or a local demo photo
+              <img
+                src={unit.photoUrl}
+                alt=""
+                className="size-8 shrink-0 rounded-md bg-white object-contain"
+              />
+            ) : (
+              <span aria-hidden="true" className="size-8 shrink-0 rounded-md bg-muted" />
+            )}
+            <span className="font-mono text-caption text-foreground">{unit.code}</span>
+            <span className="min-w-0 text-body text-muted-foreground">{unit.name}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
