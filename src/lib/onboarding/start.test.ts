@@ -8,7 +8,7 @@ import type { OnboardingStatus } from "./types"
 const item = (patch: Partial<EquipmentItem>): EquipmentItem => ({
   id: "x",
   name: "City bike",
-  category: "Bikes",
+  parentCategory: "Bikes",
   units: 14,
   codePrefix: "BIK",
   pricing: { ...emptyPricing(), daily: [{ id: "d", from: 1, to: null, price: 18 }] },
