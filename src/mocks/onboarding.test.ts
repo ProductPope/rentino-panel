@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { emptyPricing } from "@/lib/onboarding/pricing"
+
 import { mockOnboardingService, SIMULATION, simulatedProgress } from "./onboarding"
 
 function visit(search: string) {
@@ -81,8 +83,7 @@ describe("equipment added by hand", () => {
     category: "Bikes",
     units: 14,
     codePrefix: "BIK",
-    pricePerDay: 18,
-    pricePerWeek: 90,
+    pricing: { ...emptyPricing(), daily: [{ id: "d", from: 1, to: null, price: 18 }] },
   }
 
   it("starts with three demo examples and can't be approved with only those", async () => {
@@ -103,8 +104,8 @@ describe("equipment added by hand", () => {
 
   it("adds, edits, removes and puts back an item", async () => {
     const added = await mockOnboardingService.addEquipment(input)
-    await mockOnboardingService.putEquipment({ ...added, pricePerDay: 20 })
-    expect((await mockOnboardingService.listEquipment()).at(-1)?.pricePerDay).toBe(20)
+    await mockOnboardingService.putEquipment({ ...added, units: 20 })
+    expect((await mockOnboardingService.listEquipment()).at(-1)?.units).toBe(20)
     await mockOnboardingService.removeEquipment(added.id)
     expect((await mockOnboardingService.listEquipment()).some((i) => i.id === added.id)).toBe(false)
     await mockOnboardingService.putEquipment(added)
@@ -160,5 +161,35 @@ describe("forced states", () => {
   it("settings done implies a confirmed VAT rate", async () => {
     visit("?mock=imported-settings")
     expect((await mockOnboardingService.getStatus()).settings.vatConfirmed).toBe(true)
+  })
+})
+
+describe("saved before price lists", () => {
+  it("reads an old daily/weekly item as a price list", async () => {
+    const legacy = [
+      {
+        id: "old",
+        name: "Kayak",
+        category: "Kayaks",
+        units: 2,
+        codePrefix: "KAY",
+        pricePerDay: 40,
+        pricePerWeek: 200,
+      },
+    ]
+    const storage = new Map([["rentino.mock.equipment", JSON.stringify(legacy)]])
+    vi.stubGlobal("window", {
+      location: { search: "" },
+      localStorage: {
+        getItem: (k: string) => storage.get(k) ?? null,
+        setItem: () => {},
+        removeItem: () => {},
+      },
+    })
+    const [item] = await mockOnboardingService.listEquipment()
+    expect(item?.pricing).toMatchObject({
+      daily: [{ from: 1, to: null, price: 40 }],
+      weekly: [{ from: 1, to: null, price: 200 }],
+    })
   })
 })

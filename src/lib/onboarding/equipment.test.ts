@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest"
 
+import { emptyPricing, newPricingDraft } from "./pricing"
 import {
   assignCodes,
   codeRange,
   equipmentTotals,
   normalizePrefix,
-  parsePrice,
+  fromPrice,
   prefixFor,
-  priceSummary,
   toEquipmentDraft,
   toEquipmentInput,
   validateEquipment,
@@ -20,8 +20,7 @@ const valid: EquipmentDraft = {
   category: "Bikes",
   units: "14",
   codePrefix: "BIK",
-  pricePerDay: "35",
-  pricePerWeek: "",
+  pricing: { ...newPricingDraft(), daily: [{ id: "d", from: "1", to: "", price: "35" }] },
 }
 
 const item = (patch: Partial<EquipmentItem>): EquipmentItem => ({
@@ -30,8 +29,7 @@ const item = (patch: Partial<EquipmentItem>): EquipmentItem => ({
   category: "Bikes",
   units: 1,
   codePrefix: "BIK",
-  pricePerDay: 10,
-  pricePerWeek: null,
+  pricing: { ...emptyPricing(), daily: [{ id: "d", from: 1, to: null, price: 10 }] },
   ...patch,
 })
 
@@ -47,36 +45,24 @@ describe("validateEquipment", () => {
         category: "",
         units: "0",
         codePrefix: "B",
-        pricePerDay: "",
-        pricePerWeek: "abc",
+        pricing: newPricingDraft(),
       })
     ).toEqual({
       name: "Enter a name.",
       category: "Choose a category.",
       units: "Enter a whole number from 1 to 999.",
       codePrefix: "Use 2–6 letters or digits, e.g. BIK.",
-      pricePerDay: "Enter a price per day.",
-      pricePerWeek: "Enter an amount, e.g. 25 or 24.50.",
+      "daily.0.price": "Enter a price.",
     })
   })
 
-  it("rejects fractions of units, too many units and a zero price", () => {
+  it("rejects fractions of units and too many units", () => {
     expect(validateEquipment({ ...valid, units: "1.5" }).units).toBeDefined()
     expect(validateEquipment({ ...valid, units: "1000" }).units).toBeDefined()
-    expect(validateEquipment({ ...valid, pricePerDay: "0" }).pricePerDay).toBe(
-      "The price must be more than 0."
-    )
   })
 })
 
 describe("prices and prefixes", () => {
-  it("parses prices with a dot or a comma", () => {
-    expect(parsePrice("24,50")).toBe(24.5)
-    expect(parsePrice(" 12 ")).toBe(12)
-    expect(parsePrice("")).toBeNull()
-    expect(parsePrice("12.345")).toBeNaN()
-  })
-
   it("suggests a prefix per category and keeps prefixes to capitals and digits", () => {
     expect(prefixFor("Golf carts")).toBe("GLF")
     expect(prefixFor("Unknown")).toBe("")
@@ -84,18 +70,17 @@ describe("prices and prefixes", () => {
   })
 
   it("round-trips an item through the form", () => {
-    const input = toEquipmentInput({ ...valid, pricePerWeek: "180" })
+    const input = toEquipmentInput(valid)
     expect(input).toEqual({
       name: "Trek Marlin 7",
       category: "Bikes",
       units: 14,
       codePrefix: "BIK",
-      pricePerDay: 35,
-      pricePerWeek: 180,
+      pricing: { ...emptyPricing(), daily: [{ id: "d", from: 1, to: null, price: 35 }] },
     })
     expect(toEquipmentDraft({ id: "1", ...input })).toMatchObject({
       units: "14",
-      pricePerWeek: "180",
+      pricing: { daily: [{ id: "d", from: "1", to: "", price: "35" }] },
     })
   })
 })
@@ -119,11 +104,9 @@ describe("unit codes", () => {
 })
 
 describe("summaries", () => {
-  it("formats the daily and weekly price", () => {
-    expect(priceSummary({ pricePerDay: 35, pricePerWeek: 180 })).toBe(
-      "$35.00 / day · $180.00 / week"
-    )
-    expect(priceSummary({ pricePerDay: 12, pricePerWeek: null })).toBe("$12.00 / day")
+  it("the booking page shows where prices start", () => {
+    expect(fromPrice(item({}))).toBe("from $10.00 / day")
+    expect(fromPrice(item({ pricing: emptyPricing() }))).toBe("Price on request")
   })
 
   it("counts only the customer's own items", () => {
