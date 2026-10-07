@@ -23,13 +23,18 @@ import { Card } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/sonner"
-import { SETUP_SETTINGS_HREF } from "@/config/navigation"
+import { BOOKING_PAGE_HREF, SETUP_SETTINGS_HREF } from "@/config/navigation"
 import {
+  bookingDomain,
   codeRange,
   equipmentTotals,
+  isOnline,
+  productUrlBase,
+  slugOf,
   onboardingService,
   pricingSummary,
   unitsByItem,
+  type CustomFields,
   type EquipmentItem,
   type Unit,
 } from "@/lib/onboarding"
@@ -55,6 +60,20 @@ export function EquipmentStep() {
   })
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [nothingToApprove, setNothingToApprove] = useState(false)
+  // For the "Other settings" of the panel: the booking page address and the custom fields.
+  const [urlBase, setUrlBase] = useState<string>()
+  const [customFields, setCustomFields] = useState<CustomFields>()
+
+  useEffect(() => {
+    onboardingService
+      .getStatus()
+      .then((status) => setUrlBase(productUrlBase(bookingDomain(status.account.name))))
+      .catch(() => undefined)
+    onboardingService
+      .listCustomFields()
+      .then(setCustomFields)
+      .catch(() => undefined)
+  }, [])
 
   const fetchItems = useCallback(async () => {
     setLoad({ state: "loading" })
@@ -95,6 +114,7 @@ export function EquipmentStep() {
     return {
       before: at === -1 ? items : items.slice(0, at),
       taken: new Set(others.flatMap((i) => (units.get(i.id) ?? []).map((u) => u.code))),
+      slugs: new Set(others.map(slugOf)),
     }
   }, [items, units, panel.item])
 
@@ -206,12 +226,11 @@ export function EquipmentStep() {
                 .join(" · ")}
             </p>
             <ul aria-label="Your equipment" className="flex flex-col gap-4">
-              {items.map((item, index) => (
+              {items.map((item) => (
                 <EquipmentRow
                   key={item.id}
                   item={item}
                   units={units.get(item.id) ?? []}
-                  defaultOpen={index === 0}
                   onEdit={() => openPanel(item)}
                   onRemove={() => void remove(item)}
                 />
@@ -227,6 +246,10 @@ export function EquipmentStep() {
         item={panel.item}
         itemsBefore={editing.before}
         takenCodes={editing.taken}
+        takenSlugs={editing.slugs}
+        urlBase={urlBase}
+        liveHref={BOOKING_PAGE_HREF}
+        customFields={customFields}
         onSaved={replace}
       />
 
@@ -255,19 +278,17 @@ export function EquipmentStep() {
 function EquipmentRow({
   item,
   units,
-  defaultOpen,
   onEdit,
   onRemove,
 }: {
   item: EquipmentItem
   units: Unit[]
-  defaultOpen: boolean
   onEdit: () => void
   onRemove: () => void
 }) {
   return (
     <li>
-      <Collapsible defaultOpen={defaultOpen} render={<Card size="sm" />}>
+      <Collapsible render={<Card size="sm" />}>
         <h2 className="px-(--card-spacing)">
           <CollapsibleTrigger className="group flex w-full flex-wrap items-center gap-x-4 gap-y-2 rounded-md text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring focus-visible:outline-solid">
             <ChevronDownIcon
@@ -279,6 +300,7 @@ function EquipmentRow({
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-label text-foreground">{item.name}</span>
                 {item.demo && <Badge variant="info">Demo data</Badge>}
+                {!isOnline(item) && <Badge variant="secondary">Hidden online</Badge>}
               </span>
               <span className="text-body text-muted-foreground">
                 {item.parentCategory && `${item.parentCategory} · `}

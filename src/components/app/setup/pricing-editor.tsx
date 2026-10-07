@@ -80,19 +80,30 @@ export function PricingEditor({
   errors,
   tab,
   onTabChange,
+  revealed = { rates: 0, rules: 0 },
 }: {
   value: PricingDraft
   onChange: (next: PricingDraft) => void
   errors: PricingErrors
   tab: RateKind
   onTabChange: (tab: RateKind) => void
+  /**
+   * Both sections start collapsed. Each count bumps when a save finds errors there: the section
+   * re-mounts open, so focus can reach the field.
+   */
+  revealed?: { rates: number; rules: number }
 }) {
   const set = (patch: Partial<PricingDraft>) => onChange({ ...value, ...patch })
   const hasErrors = (kind: RateKind) => Object.keys(errors).some((k) => kindOfError(k) === kind)
 
   return (
     <>
-      <EditPanelSection title="Rental rates" icon={<BanknoteIcon aria-hidden="true" />}>
+      <EditPanelSection
+        key={`rates-${revealed.rates}`}
+        defaultOpen={revealed.rates > 0}
+        title="Rental rates"
+        icon={<BanknoteIcon aria-hidden="true" />}
+      >
         <div className="flex flex-col gap-4">
           {errors.rates && <FieldError>{errors.rates}</FieldError>}
           <Tabs value={tab} onValueChange={(v) => onTabChange(v as RateKind)}>
@@ -150,7 +161,12 @@ export function PricingEditor({
         </div>
       </EditPanelSection>
 
-      <EditPanelSection title="Dynamic pricing" icon={<ZapIcon aria-hidden="true" />}>
+      <EditPanelSection
+        key={`rules-${revealed.rules}`}
+        defaultOpen={revealed.rules > 0}
+        title="Dynamic pricing"
+        icon={<ZapIcon aria-hidden="true" />}
+      >
         <div className="flex flex-col gap-4">
           <p className="text-body text-muted-foreground">
             Raise or lower prices on chosen dates — a season, holidays, weekends.
