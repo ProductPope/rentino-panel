@@ -59,15 +59,20 @@ test.describe("before import (A–C)", () => {
     await expect(page.getByText("The setup wizard is coming soon")).toBeVisible()
   })
 
-  test("the booking page step opens the booking page", async ({ page }) => {
+  test("the booking page step opens the booking page in a new tab, and says so", async ({
+    page,
+  }) => {
     await open(page, URL)
-    await page.getByRole("link", { name: "Open page" }).click()
-    await expect(page).toHaveURL(/\/booking-page$/)
+    const link = page.getByRole("link", { name: /^Open page/ })
+    await expect(link).toHaveAccessibleName("Open page (opens in a new tab)")
+    await expect(link).toHaveAttribute("target", "_blank")
+    const [tab] = await Promise.all([page.context().waitForEvent("page"), link.click()])
+    await expect(tab).toHaveURL(/\/booking-page$/)
   })
 
   test("each call to action is described by its step title", async ({ page }) => {
     await open(page, URL)
-    await expect(page.getByRole("link", { name: "Open page" })).toHaveAccessibleDescription(
+    await expect(page.getByRole("link", { name: /^Open page/ })).toHaveAccessibleDescription(
       "View your booking page"
     )
   })

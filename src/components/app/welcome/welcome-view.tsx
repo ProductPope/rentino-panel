@@ -152,6 +152,7 @@ function WelcomeGettingStarted({ status }: { status: OnboardingStatus }) {
             number={i + 1}
             headingLevel={2}
             href={hrefFor(step.id)}
+            external={step.id === "booking_page"}
             onAction={handleAction}
           />
         ))}
@@ -207,6 +208,7 @@ function WelcomeImported({ status }: { status: OnboardingStatus }) {
               number={i + 1}
               headingLevel={3}
               href={hrefFor(step.id)}
+              external={step.id === "booking_page"}
               onAction={handleAction}
             />
           ))}
