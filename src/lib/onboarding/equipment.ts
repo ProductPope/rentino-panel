@@ -1,5 +1,15 @@
 import { formatMoney } from "@/lib/tenant"
 
+import {
+  newPricingDraft,
+  startingPrice,
+  toPricing,
+  toPricingDraft,
+  validatePricing,
+  type Pricing,
+  type PricingDraft,
+} from "./pricing"
+
 /**
  * Equipment the customer adds by hand in the setup wizard (step "Equipment and prices").
  * One item = one kind of equipment with N units; each unit gets a code (BIK-001, BIK-002, …).
@@ -11,9 +21,8 @@ export interface EquipmentItem {
   units: number
   /** Unit codes start with it: "BIK" → BIK-001, BIK-002, … */
   codePrefix: string
-  pricePerDay: number
-  /** Optional: a weekly price; without it the daily price applies. */
-  pricePerWeek: number | null
+  /** Rental rates (per hour, packages, daily, nightly, weekly, monthly) and dynamic pricing rules. */
+  pricing: Pricing
   /** Thumbnail URL (or a data URL of a photo the customer picked). */
   photoUrl?: string
   /** An example on demo data: shown to start from, never saved by approving. */
@@ -53,41 +62,24 @@ export interface EquipmentDraft {
   category: string
   units: string
   codePrefix: string
-  pricePerDay: string
-  pricePerWeek: string
+  pricing: PricingDraft
   photoUrl?: string
 }
 
-export type EquipmentErrors = Partial<Record<keyof EquipmentDraft, string>>
+/** Errors by field: `name`, `units`, … and pricing paths such as `daily.0.price`, `rules.1.value`. */
+export type EquipmentErrors = Record<string, string>
 
 export function toEquipmentDraft(item?: EquipmentItem): EquipmentDraft {
   if (!item)
-    return { name: "", category: "", units: "1", codePrefix: "", pricePerDay: "", pricePerWeek: "" }
+    return { name: "", category: "", units: "1", codePrefix: "", pricing: newPricingDraft() }
   return {
     name: item.name,
     category: item.category,
     units: String(item.units),
     codePrefix: item.codePrefix,
-    pricePerDay: String(item.pricePerDay),
-    pricePerWeek: item.pricePerWeek == null ? "" : String(item.pricePerWeek),
+    pricing: toPricingDraft(item.pricing),
     photoUrl: item.photoUrl,
   }
-}
-
-/** A price as typed ("12", "12.5", "12,50") → number; "" → null; anything else → NaN. */
-export function parsePrice(value: string): number | null {
-  const trimmed = value.trim().replace(",", ".")
-  if (!trimmed) return null
-  return /^\d+(\.\d{1,2})?$/.test(trimmed) ? Number(trimmed) : NaN
-}
-
-/** Error for a price field, or undefined when it's fine. */
-export function priceError(value: string, required: boolean) {
-  const price = parsePrice(value)
-  if (price === null) return required ? "Enter a price per day." : undefined
-  if (Number.isNaN(price)) return "Enter an amount, e.g. 25 or 24.50."
-  if (price <= 0) return "The price must be more than 0."
-  return undefined
 }
 
 export function validateEquipment(draft: EquipmentDraft): EquipmentErrors {
@@ -100,11 +92,7 @@ export function validateEquipment(draft: EquipmentDraft): EquipmentErrors {
   if (!/^\d+$/.test(draft.units.trim()) || units < 1 || units > UNITS_MAX)
     errors.units = `Enter a whole number from 1 to ${UNITS_MAX}.`
   if (draft.codePrefix.length < 2) errors.codePrefix = "Use 2–6 letters or digits, e.g. BIK."
-  const day = priceError(draft.pricePerDay, true)
-  if (day) errors.pricePerDay = day
-  const week = priceError(draft.pricePerWeek, false)
-  if (week) errors.pricePerWeek = week
-  return errors
+  return { ...errors, ...validatePricing(draft.pricing) }
 }
 
 /** A valid draft as the input to save. Call only when `validateEquipment` returns no errors. */
@@ -114,8 +102,7 @@ export function toEquipmentInput(draft: EquipmentDraft): EquipmentInput {
     category: draft.category,
     units: Number(draft.units),
     codePrefix: draft.codePrefix,
-    pricePerDay: parsePrice(draft.pricePerDay) ?? 0,
-    pricePerWeek: parsePrice(draft.pricePerWeek),
+    pricing: toPricing(draft.pricing),
     ...(draft.photoUrl ? { photoUrl: draft.photoUrl } : {}),
   }
 }
@@ -144,11 +131,10 @@ export function assignCodes(items: Pick<EquipmentItem, "id" | "units" | "codePre
 export const codeRange = (range: { first: string; last: string }) =>
   range.first === range.last ? range.first : `${range.first}…${range.last}`
 
-/** "$35.00 / day · $180.00 / week" */
-export function priceSummary(item: Pick<EquipmentItem, "pricePerDay" | "pricePerWeek">) {
-  const parts = [`${formatMoney(item.pricePerDay)} / day`]
-  if (item.pricePerWeek != null) parts.push(`${formatMoney(item.pricePerWeek)} / week`)
-  return parts.join(" · ")
+/** "from $26.00 / day" — what the booking page shows for an item. */
+export function fromPrice(item: Pick<EquipmentItem, "pricing">) {
+  const start = startingPrice(item.pricing)
+  return start ? `from ${formatMoney(start.amount)} ${start.suffix}` : "Price on request"
 }
 
 /** What approving saves: only the customer's own items, never the demo examples. */

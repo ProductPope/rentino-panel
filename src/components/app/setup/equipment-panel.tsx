@@ -1,6 +1,6 @@
 "use client"
 
-import { BanknoteIcon, ImageIcon, PackageIcon, XIcon } from "lucide-react"
+import { ImageIcon, PackageIcon, XIcon } from "lucide-react"
 import { useRef, useState } from "react"
 
 import { EditPanel, EditPanelFields, EditPanelSection } from "@/components/eq/edit-panel"
@@ -8,12 +8,6 @@ import { FormField } from "@/components/eq/form-field"
 import { IconButton } from "@/components/eq/icon-button"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group"
 import {
   Select,
   SelectContent,
@@ -34,8 +28,21 @@ import {
   validateEquipment,
   type EquipmentDraft,
   type EquipmentItem,
+  type PricingDraft,
+  type RateKind,
 } from "@/lib/onboarding"
-import { tenant } from "@/lib/tenant"
+
+import { kindOfError, PricingEditor } from "./pricing-editor"
+
+/** The tab to open first: daily if the item has daily prices, else the first kind it has. */
+function firstTab(pricing: PricingDraft): RateKind {
+  if (pricing.daily.length > 0) return "daily"
+  const kinds: RateKind[] = ["hourly", "packages", "weekly", "monthly"]
+  return (
+    kinds.find((k) => (pricing[k] as unknown[]).length > 0) ??
+    (pricing.nightly ? "nightly" : "daily")
+  )
+}
 
 /** Photos are kept in the browser (no backend), so they stay small. */
 const PHOTO_MAX_BYTES = 1024 * 1024
@@ -69,14 +76,19 @@ export function EquipmentPanel({
   const [showErrors, setShowErrors] = useState(false)
   const [photoError, setPhotoError] = useState<string>()
   const [saving, setSaving] = useState<"stay" | "close" | null>(null)
+  const [tab, setTab] = useState<RateKind>(() => firstTab(draft.pricing))
   const formRef = useRef<HTMLFormElement>(null)
 
   const errors = showErrors ? validateEquipment(draft) : {}
   const update = (patch: Partial<EquipmentDraft>) => setDraft((d) => ({ ...d, ...patch }))
 
   async function save(stay: boolean) {
-    if (Object.keys(validateEquipment(draft)).length > 0) {
+    const problems = Object.keys(validateEquipment(draft))
+    if (problems.length > 0) {
       setShowErrors(true)
+      // An error in a closed rate tab: open that tab so focus can reach the field.
+      const kind = problems.map(kindOfError).find((k) => k && k !== "rules")
+      if (kind && kind !== "rules") setTab(kind)
       requestAnimationFrame(() =>
         formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
       )
@@ -93,6 +105,7 @@ export function EquipmentPanel({
       if (stay) {
         toast.success(`Added ${saved.name}`)
         setDraft(toEquipmentDraft())
+        setTab("daily")
         setShowErrors(false)
         requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>("input")?.focus())
       } else {
@@ -119,6 +132,7 @@ export function EquipmentPanel({
   return (
     <EditPanel
       open={open}
+      defaultSize="half"
       onOpenChange={(next) => {
         if (!saving) onOpenChange(next)
       }}
@@ -284,65 +298,15 @@ export function EquipmentPanel({
           </EditPanelFields>
         </EditPanelSection>
 
-        <EditPanelSection title="Price" icon={<BanknoteIcon aria-hidden="true" />}>
-          <EditPanelFields>
-            <PriceInput
-              label="Price per day"
-              required
-              value={draft.pricePerDay}
-              error={errors.pricePerDay}
-              onChange={(pricePerDay) => update({ pricePerDay })}
-            />
-            <PriceInput
-              label="Price per week"
-              description="Optional. Without it, 7 days cost 7 × the daily price."
-              value={draft.pricePerWeek}
-              error={errors.pricePerWeek}
-              onChange={(pricePerWeek) => update({ pricePerWeek })}
-            />
-          </EditPanelFields>
-        </EditPanelSection>
+        <PricingEditor
+          value={draft.pricing}
+          onChange={(pricing) => update({ pricing })}
+          errors={errors}
+          tab={tab}
+          onTabChange={setTab}
+        />
       </form>
     </EditPanel>
-  )
-}
-
-export function PriceInput({
-  label,
-  description,
-  required,
-  value,
-  error,
-  onChange,
-  onBlur,
-}: {
-  label: string
-  description?: string
-  required?: boolean
-  value: string
-  error?: string
-  onChange: (value: string) => void
-  onBlur?: () => void
-}) {
-  return (
-    <FormField label={label} description={description} required={required} error={error}>
-      {(field) => (
-        <InputGroup className="max-w-48">
-          <InputGroupInput
-            {...field}
-            inputMode="decimal"
-            autoComplete="off"
-            className="text-right font-mono tabular-nums"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onBlur={onBlur}
-          />
-          <InputGroupAddon align="inline-end">
-            <InputGroupText>{tenant.currency}</InputGroupText>
-          </InputGroupAddon>
-        </InputGroup>
-      )}
-    </FormField>
   )
 }
 

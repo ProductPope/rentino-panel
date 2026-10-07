@@ -1,4 +1,5 @@
 import { equipmentTotals, type EquipmentItem } from "@/lib/onboarding/equipment"
+import { emptyPricing, type Pricing, type RateTier } from "@/lib/onboarding/pricing"
 import {
   OnboardingError,
   type OnboardingService,
@@ -93,6 +94,13 @@ function seed(): OnboardingStatus {
 
 const store = persisted<OnboardingStatus>("rentino.mock.onboarding", seed)
 
+const tier = (id: string, from: number, to: number | null, price: number): RateTier => ({
+  id,
+  from,
+  to,
+  price,
+})
+
 /** Three examples on demo data to start from (the customer can remove them). */
 function seedEquipment(): EquipmentItem[] {
   return [
@@ -102,8 +110,31 @@ function seedEquipment(): EquipmentItem[] {
       category: "Bikes",
       units: 1,
       codePrefix: "BIK",
-      pricePerDay: 35,
-      pricePerWeek: 180,
+      pricing: {
+        ...emptyPricing(),
+        hourly: [tier("trek-h1", 1, 2, 8), tier("trek-h2", 3, 4, 7)],
+        daily: [tier("trek-d1", 1, 2, 35), tier("trek-d2", 3, 6, 30), tier("trek-d3", 7, null, 26)],
+        weekly: [tier("trek-w1", 1, null, 180)],
+        rules: [
+          {
+            id: "trek-summer",
+            dateType: "range",
+            change: "percent",
+            value: 20,
+            from: "2027-06-01",
+            to: "2027-08-31",
+            active: true,
+          },
+          {
+            id: "trek-weekend",
+            dateType: "weekdays",
+            change: "percent",
+            value: 10,
+            weekdays: [6, 0],
+            active: true,
+          },
+        ],
+      },
       photoUrl: "/demo/equipment/trek-marlin-7.webp",
       demo: true,
     },
@@ -113,8 +144,25 @@ function seedEquipment(): EquipmentItem[] {
       category: "Golf carts",
       units: 1,
       codePrefix: "GLF",
-      pricePerDay: 120,
-      pricePerWeek: 650,
+      pricing: {
+        ...emptyPricing(),
+        hourly: [tier("cart-h1", 1, 2, 30), tier("cart-h2", 3, 5, 25)],
+        packages: [
+          { id: "cart-p1", hours: 4, price: 90 },
+          { id: "cart-p2", hours: 8, price: 150 },
+        ],
+        daily: [tier("cart-d1", 1, null, 120)],
+        rules: [
+          {
+            id: "cart-weekend",
+            dateType: "weekdays",
+            change: "percent",
+            value: 15,
+            weekdays: [6, 0],
+            active: true,
+          },
+        ],
+      },
       photoUrl: "/demo/equipment/club-car-tempo.webp",
       demo: true,
     },
@@ -124,15 +172,45 @@ function seedEquipment(): EquipmentItem[] {
       category: "Tennis rackets",
       units: 1,
       codePrefix: "TNS",
-      pricePerDay: 12,
-      pricePerWeek: 60,
+      pricing: {
+        ...emptyPricing(),
+        hourly: [tier("tns-h1", 1, 1, 5), tier("tns-h2", 2, 3, 4)],
+        daily: [tier("tns-d1", 1, null, 12)],
+        weekly: [tier("tns-w1", 1, null, 60)],
+        monthly: [tier("tns-m1", 1, null, 180)],
+      },
       photoUrl: "/demo/equipment/wilson-pro-staff-rf97.webp",
       demo: true,
     },
   ]
 }
 
-const equipment = persisted<EquipmentItem[]>("rentino.mock.equipment", seedEquipment)
+const stored = persisted<EquipmentItem[]>("rentino.mock.equipment", seedEquipment)
+
+/** Items saved before price lists (a daily and a weekly price only) are read as price lists. */
+type LegacyItem = Omit<EquipmentItem, "pricing"> & {
+  pricing?: Pricing
+  pricePerDay?: number
+  pricePerWeek?: number | null
+}
+function migrate(item: LegacyItem): EquipmentItem {
+  if (item.pricing) return item as EquipmentItem
+  const { pricePerDay, pricePerWeek, ...rest } = item
+  return {
+    ...rest,
+    pricing: {
+      ...emptyPricing(),
+      daily: pricePerDay ? [tier(`${item.id}-d`, 1, null, pricePerDay)] : [],
+      weekly: pricePerWeek ? [tier(`${item.id}-w`, 1, null, pricePerWeek)] : [],
+    },
+  }
+}
+
+const equipment = {
+  read: () => (stored.read() as LegacyItem[]).map(migrate),
+  write: (items: EquipmentItem[]) => stored.write(items),
+  reset: () => stored.reset(),
+}
 
 /** The stored status, with preparing advanced to now (and finished when it's time). */
 function current(now = Date.now()): OnboardingStatus {

@@ -1,4 +1,4 @@
-import { equipmentTotals, type EquipmentItem } from "./equipment"
+import { equipmentTotals, fromPrice, type EquipmentItem } from "./equipment"
 import { settingsSummary } from "./settings"
 import type { OnboardingStatus } from "./types"
 
@@ -24,7 +24,7 @@ export const initials = (name: string) =>
 export function bookingPreviewItems(items: EquipmentItem[]) {
   return items
     .filter((i) => !i.demo)
-    .map((i) => ({ id: i.id, name: i.name, photoUrl: i.photoUrl, pricePerDay: i.pricePerDay }))
+    .map((i) => ({ id: i.id, name: i.name, photoUrl: i.photoUrl, price: fromPrice(i) }))
 }
 
 export type SetupArea = "equipment" | "settings"

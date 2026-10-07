@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import type { EquipmentItem } from "./equipment"
+import { emptyPricing } from "./pricing"
 import { bookingDomain, bookingPreviewItems, initials, setupRows } from "./start"
 import type { OnboardingStatus } from "./types"
 
@@ -10,8 +11,7 @@ const item = (patch: Partial<EquipmentItem>): EquipmentItem => ({
   category: "Bikes",
   units: 14,
   codePrefix: "BIK",
-  pricePerDay: 18,
-  pricePerWeek: null,
+  pricing: { ...emptyPricing(), daily: [{ id: "d", from: 1, to: null, price: 18 }] },
   ...patch,
 })
 
@@ -49,7 +49,7 @@ describe("booking page", () => {
   it("previews only the customer's own items", () => {
     expect(
       bookingPreviewItems([item({ id: "d", demo: true }), item({ id: "a", photoUrl: "/a.webp" })])
-    ).toEqual([{ id: "a", name: "City bike", photoUrl: "/a.webp", pricePerDay: 18 }])
+    ).toEqual([{ id: "a", name: "City bike", photoUrl: "/a.webp", price: "from $18.00 / day" }])
   })
 })
 
