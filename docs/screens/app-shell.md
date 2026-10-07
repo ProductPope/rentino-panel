@@ -1,6 +1,7 @@
 ---
 title: Panel shell and navigation
 routes: []
+nav: Panel shell
 status: prototype
 ---
 

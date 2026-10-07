@@ -1,6 +1,7 @@
 ---
 title: Setup 1 — Your details
 routes: [/welcome/setup/sources]
+nav: 1 · Your details
 status: prototype
 ---
 
@@ -9,7 +10,7 @@ status: prototype
 The customer chooses how to add their equipment: **enter it by hand**, or **upload a price list** we
 turn into a draft.
 
-![Setup step 1](../img/setup-1-sources.jpg)
+![Setup step 1](../../../img/setup-1-sources.jpg)
 
 ## Getting there
 
@@ -18,9 +19,9 @@ and a close button back to Welcome.
 
 ## What the user can do
 
-- **Enter by hand** → continue to [Setup 3](./setup-3-equipment.md).
+- **Enter by hand** → continue to [Setup 3](./equipment.md).
 - **Upload a price list** → choose a file (`Input type="file"`; a dropzone isn't in EQ yet), see its
-  name and size, remove it → send → [Setup 2](./setup-2-progress.md). The stage becomes B
+  name and size, remove it → send → [Setup 2](./progress.md). The stage becomes B
   (`processing`).
 
 ## Rules and validation
@@ -31,7 +32,7 @@ no file), `formatFileSize` (tests: `rules.test.ts`).
 ## Data
 
 `onboardingService.submitSources({ fileName })` — only the file name is sent; the mock simulates the
-preparation. A real backend uploads the file — see [onboarding](../backend/onboarding.md).
+preparation. A real backend uploads the file — see [onboarding](../../../backend/onboarding.md).
 
 ## Components
 

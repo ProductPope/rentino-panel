@@ -64,7 +64,9 @@ with a full-run fallback; never skip or disable tests to save minutes. Every job
 backend. Keep it current **as part of every change**, without being asked — a PR that changes behaviour
 without its docs is not done. Map of what to update: `docs/README.md` → "Keeping the docs current".
 
-- New route or screen → `docs/screens/<name>.md` from `_template.md` + a row in `docs/screens/README.md`.
+- New route or screen → a page from `docs/screens/_template.md` in the folder mirroring its route
+  (`screens/settings/users.md`), linked from that folder's README (link order = menu order) and listed
+  in `docs/screens/README.md`.
 - Changed screen → its page; refresh screenshots (`pnpm build && pnpm docs:screens`, shots in
   `scripts/docs/screens.spec.ts`) when what it shows changed.
 - Service method, error reason, permission or business rule → `docs/backend/<domain>.md`.

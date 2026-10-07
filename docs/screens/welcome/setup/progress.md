@@ -1,6 +1,7 @@
 ---
 title: Setup 2 — Preparing
 routes: [/welcome/setup/progress]
+nav: 2 · Preparing
 status: prototype
 ---
 
@@ -9,7 +10,7 @@ status: prototype
 While we turn the customer's price list into a draft: what's done, what's in progress, and when it
 will be ready.
 
-![Setup step 2](../img/setup-2-progress.jpg)
+![Setup step 2](../../../img/setup-2-progress.jpg)
 
 ## States
 
@@ -31,7 +32,7 @@ email them when the draft is ready, and Welcome shows it too.
 ## Data
 
 `onboardingService.getStatus()`, polled. A real backend could push progress instead (see
-[onboarding](../backend/onboarding.md)).
+[onboarding](../../../backend/onboarding.md)).
 
 ## Components
 
@@ -40,7 +41,7 @@ email them when the draft is ready, and Welcome shows it too.
 
 ## Open questions
 
-The draft review ("Review and approve") isn't built — [Decisions](../decisions.md#open).
+The draft review ("Review and approve") isn't built — [Decisions](../../../decisions.md#open).
 
 ## Tests
 

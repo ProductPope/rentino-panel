@@ -1,3 +1,7 @@
+---
+nav: Session and permissions
+---
+
 # Session, permissions and audit log — backend
 
 ## Session

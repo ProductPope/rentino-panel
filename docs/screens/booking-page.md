@@ -1,6 +1,7 @@
 ---
 title: Booking page (stand-in)
 routes: [/booking-page]
+nav: Booking page (stand-in)
 status: stand-in
 ---
 

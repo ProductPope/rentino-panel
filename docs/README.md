@@ -58,9 +58,12 @@ template has a docs checkbox for what a script can't check: that the words are s
 
 ## Adding a screen
 
-1. Copy [`screens/_template.md`](./screens/_template.md) to `screens/<name>.md`, fill it in, set
-   `routes:` in its front matter.
-2. Link it from [`screens/README.md`](./screens/README.md).
+1. Copy [`screens/_template.md`](./screens/_template.md) into the folder that mirrors the screen's
+   route (`/settings/users` → `screens/settings/users.md`; a screen with sub-pages gets a folder and
+   a `README.md`), fill it in, set `routes:` (and a short `nav:` label if the title is long).
+2. Link it from its folder's `README.md` — the order of those links is the order in the docs menu —
+   and add a row to [`screens/README.md`](./screens/README.md). If the screen is in the panel's
+   sidebar, the menu picks it up from `src/config/navigation.tsx` by its route.
 3. Add its states to `scripts/docs/screens.spec.ts`, run `pnpm build && pnpm docs:screens`, commit the
    images in `docs/img/`.
 4. If it has a service: a page in `docs/backend/`.

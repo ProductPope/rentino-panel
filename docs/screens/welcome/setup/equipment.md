@@ -1,6 +1,7 @@
 ---
 title: Setup 3 — Equipment and prices
 routes: [/welcome/setup/equipment]
+nav: 3 · Equipment and prices
 status: prototype
 ---
 
@@ -9,11 +10,11 @@ status: prototype
 The customer adds what they rent out — by hand — with units, full price lists and booking page
 settings. It looks like the review of a prepared draft: one row per item, edited in a side panel.
 
-![Setup step 3](../img/setup-3-equipment.jpg)
+![Setup step 3](../../../img/setup-3-equipment.jpg)
 
 ## Getting there
 
-Setup 1 → "Enter it by hand". **Approve** leads to [Setup 4](./setup-4-settings.md).
+Setup 1 → "Enter it by hand". **Approve** leads to [Setup 4](./settings.md).
 
 ## The list
 
@@ -28,7 +29,7 @@ Setup 1 → "Enter it by hand". **Approve** leads to [Setup 4](./setup-4-setting
 
 ## The side panel (`EditPanel`)
 
-![Side panel](../img/setup-3-panel.jpg)
+![Side panel](../../../img/setup-3-panel.jpg)
 
 Sections — **only the first starts open**; a save with errors opens every section that has one and
 moves focus to the first invalid field.
@@ -50,7 +51,7 @@ prefix. A unit can override its **code** (e.g. a frame number), **name** ("Size 
 
 ### Other settings
 
-![Other settings](../img/setup-3-panel-other-settings.jpg)
+![Other settings](../../../img/setup-3-panel-other-settings.jpg)
 
 From Rentino's "online booking settings":
 
@@ -65,12 +66,12 @@ From Rentino's "online booking settings":
 
 ## States
 
-| State                          | How to see it                               |
-| ------------------------------ | ------------------------------------------- |
-| Ready                          | `/welcome/setup/equipment`                  |
-| Empty                          | remove the demo items                       |
-| Nothing of your own to approve | "Approve" with only demo items → warning    |
-| 320 px                         | ![320 px](../img/setup-3-equipment-320.jpg) |
+| State                          | How to see it                                     |
+| ------------------------------ | ------------------------------------------------- |
+| Ready                          | `/welcome/setup/equipment`                        |
+| Empty                          | remove the demo items                             |
+| Nothing of your own to approve | "Approve" with only demo items → warning          |
+| 320 px                         | ![320 px](../../../img/setup-3-equipment-320.jpg) |
 
 ## Rules and validation
 
@@ -88,7 +89,7 @@ All in `src/lib/onboarding/` with tests next to them:
 
 `listEquipment`, `addEquipment`, `putEquipment` (save, undo), `removeEquipment`, `listCustomFields`,
 `getStatus` (for the booking page address), `importEquipment` (Approve). See
-[onboarding](../backend/onboarding.md).
+[onboarding](../../../backend/onboarding.md).
 
 ## Components
 
