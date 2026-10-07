@@ -295,6 +295,14 @@ for (const theme of THEMES) {
         .getByRole("menuitem", { name: "Activate" })
         .click()
       await expect(page.getByText("Code PARTNER_HOTEL activated")).toBeVisible()
+      // The toast fades and slides in; axe measures contrast mid-transition (a translucent "Undo"
+      // fails), so wait until its entry animation has finished.
+      const toast = page.locator("[data-sonner-toast]").first()
+      await expect(toast).toHaveAttribute("data-mounted", "true")
+      await toast.evaluate((el) =>
+        Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished))
+      )
+      await expect(toast).toHaveCSS("opacity", "1")
       await expectNoAxeViolations(page)
     })
 
