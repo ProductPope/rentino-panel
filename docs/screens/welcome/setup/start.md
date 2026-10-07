@@ -1,6 +1,7 @@
 ---
 title: Setup 5 — Start
 routes: [/welcome/setup/start]
+nav: 5 · Start
 status: prototype
 ---
 
@@ -9,7 +10,7 @@ status: prototype
 The booking page is ready: a preview with the customer's own equipment and prices, a summary of
 what we set up (each with a way back to change it), and the last step — connect payments.
 
-![Setup step 5](../img/setup-5-start.jpg)
+![Setup step 5](../../../img/setup-5-start.jpg)
 
 ## What's on it
 
@@ -38,7 +39,7 @@ what we set up (each with a way back to change it), and the last step — connec
 
 ## Data
 
-`getStatus()`, `listEquipment()`, `connectPayments()`. See [onboarding](../backend/onboarding.md) —
+`getStatus()`, `listEquipment()`, `connectPayments()`. See [onboarding](../../../backend/onboarding.md) —
 Stripe Connect is a backend + redirect flow in the product.
 
 ## Components

@@ -1,6 +1,7 @@
 ---
 title: Setup 4 — Settings
 routes: [/welcome/setup/settings]
+nav: 4 · Settings
 status: prototype
 ---
 
@@ -8,12 +9,12 @@ status: prototype
 
 The rental terms, prefilled with suggested values the customer confirms or changes.
 
-![Setup step 4](../img/setup-4-settings.jpg)
+![Setup step 4](../../../img/setup-4-settings.jpg)
 
 ## Getting there
 
 After approving equipment in step 3, or Welcome D → "Finish your rental settings". **Save and
-continue** → [Setup 5](./setup-5-start.md); **I'll finish later** → Welcome.
+continue** → [Setup 5](./start.md); **I'll finish later** → Welcome.
 
 ## Sections
 
@@ -43,7 +44,7 @@ service (`vat_not_confirmed`).
 ## Data
 
 `getStatus()` (current settings), `saveSettings(settings)` — needs stage `imported` and a confirmed VAT
-rate; marks settings done. See [onboarding](../backend/onboarding.md).
+rate; marks settings done. See [onboarding](../../../backend/onboarding.md).
 
 ## Components
 

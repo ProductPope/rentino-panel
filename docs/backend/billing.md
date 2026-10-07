@@ -1,7 +1,11 @@
+---
+nav: Billing
+---
+
 # Billing — backend
 
 Interface: `BillingService` in `src/lib/billing/types.ts`. Mock: `src/mocks/billing.ts`. Screen:
-[Welcome](../screens/welcome.md) (trial bar, plans dialog).
+[Welcome](../screens/welcome/README.md) (trial bar, plans dialog).
 
 ## Data
 

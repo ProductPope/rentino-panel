@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest"
 
 import {
   headingId,
+  linkedFiles,
+  routesOf,
   hrefOfSlug,
   parseFrontMatter,
   resolvePath,
@@ -70,5 +72,15 @@ describe("headings and front matter", () => {
     expect(parseFrontMatter(source).body).toBe("\n# Welcome page\n")
     expect(titleOf("x.md", "# Mock data\n\ntext")).toBe("Mock data")
     expect(titleOf("x.md", "no heading")).toBe("x.md")
+  })
+})
+
+describe("linkedFiles and routes", () => {
+  it("lists the docs a page links to, once, in order", () => {
+    const md =
+      "[a](./b.md) [c](../img/x.jpg) [d](./b.md#x) [e](./sub/README.md) [f](../../CLAUDE.md)"
+    expect(linkedFiles("screens/README.md", md)).toEqual(["screens/b.md", "screens/sub/README.md"])
+    expect(routesOf("[/, /welcome]")).toEqual(["/", "/welcome"])
+    expect(routesOf("[]")).toEqual([])
   })
 })

@@ -1,3 +1,7 @@
+---
+nav: Deployment
+---
+
 # Deployment — the online prototype
 
 The prototype is a plain Next.js app with no backend and no environment variables, so it runs on

@@ -1,8 +1,12 @@
+---
+nav: Discount codes
+---
+
 # Discount codes — backend
 
 Interface: `DiscountCodeRepository` in `src/lib/discount-codes/types.ts`. Mock:
 `src/mocks/discount-codes.ts` (tests: `discount-codes.test.ts`). Screen:
-[Settings → Discount codes](../screens/discount-codes.md). Jira: WHLZ-566.
+[Settings → Discount codes](../screens/settings/discount-codes.md). Jira: WHLZ-566.
 
 ## Data
 

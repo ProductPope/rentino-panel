@@ -3,17 +3,14 @@ import "server-only"
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 
-import { hrefOfSlug, parseFrontMatter, slugOfFile, titleOf } from "./paths"
+import type { NavPage } from "./nav"
+import { hrefOfSlug, linkedFiles, parseFrontMatter, routesOf, slugOfFile, titleOf } from "./paths"
 
 /** The Markdown files in docs/, read at build time (the /docs pages are static). */
 const ROOT = join(process.cwd(), "docs")
 
-export interface DocPage {
-  /** Path relative to docs/, e.g. "screens/welcome.md". */
-  file: string
+export interface DocPage extends NavPage {
   slug: string[]
-  href: string
-  title: string
 }
 
 function walk(dir: string): string[] {
@@ -24,18 +21,24 @@ function walk(dir: string): string[] {
   })
 }
 
-/** Every page, the docs home first, then guides, then each folder's index and its pages. */
+/** Every page in docs/ (the navigation orders them; see nav.ts). */
 export function listDocs(): DocPage[] {
   return walk(ROOT)
-    .map((file) => {
+    .map((file): DocPage => {
+      const source = read(file)
+      const { data, body } = parseFrontMatter(source)
       const slug = slugOfFile(file)
-      return { file, slug, href: hrefOfSlug(slug), title: titleOf(file, read(file)) }
+      return {
+        file,
+        slug,
+        href: hrefOfSlug(slug),
+        title: titleOf(file, source),
+        nav: data.nav,
+        routes: routesOf(data.routes),
+        links: linkedFiles(file, body),
+      }
     })
-    .sort((a, b) => {
-      const key = (p: DocPage) =>
-        `${p.slug.length > 1 ? p.slug[0] : ""}/${p.file.endsWith("README.md") ? "" : p.file}`
-      return key(a).localeCompare(key(b))
-    })
+    .sort((a, b) => a.file.localeCompare(b.file))
 }
 
 const read = (file: string) => readFileSync(join(ROOT, file), "utf8")

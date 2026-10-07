@@ -1,10 +1,14 @@
+---
+nav: Onboarding
+---
+
 # Onboarding — backend
 
 Interface: `OnboardingService` in `src/lib/onboarding/types.ts`. Mock: `src/mocks/onboarding.ts`
-(tests: `onboarding.test.ts`). Screens: [Welcome](../screens/welcome.md) and the setup wizard
-([1](../screens/setup-1-sources.md) · [2](../screens/setup-2-progress.md) ·
-[3](../screens/setup-3-equipment.md) · [4](../screens/setup-4-settings.md) ·
-[5](../screens/setup-5-start.md)).
+(tests: `onboarding.test.ts`). Screens: [Welcome](../screens/welcome/README.md) and the setup wizard
+([1](../screens/welcome/setup/sources.md) · [2](../screens/welcome/setup/progress.md) ·
+[3](../screens/welcome/setup/equipment.md) · [4](../screens/welcome/setup/settings.md) ·
+[5](../screens/welcome/setup/start.md)).
 
 ## The status
 

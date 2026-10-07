@@ -1,6 +1,7 @@
 ---
 title: Docs site
 routes: [/docs/[[...slug]]]
+nav: Docs site
 status: prototype
 ---
 
@@ -15,14 +16,20 @@ matches the prototype version it ships with (every Vercel preview has its own `/
 - `src/app/docs/[[...slug]]/page.tsx` — one static page per `docs/**/*.md`, generated at build time
   (`generateStaticParams`, `dynamicParams = false`: anything else under `/docs` is a 404).
   `docs/README.md` → `/docs`, `docs/screens/README.md` → `/docs/screens`,
-  `docs/screens/welcome.md` → `/docs/screens/welcome`.
+  `docs/screens/welcome/setup/equipment.md` → `/docs/screens/welcome/setup/equipment`.
 - `src/app/docs/img/[name]/route.ts` — serves `docs/img/*` at `/docs/img/<name>`.
 - `src/lib/docs/paths.ts` — routes and link rewriting (tests: `paths.test.ts`): links to other docs
   stay on the site, images go to `/docs/img`, links to files outside `docs/` (`CLAUDE.md`, source
   files) open on GitHub in a new tab. Headings get GitHub-style anchors, so `#…` links work in both.
 - `src/components/app/docs/markdown.tsx` — renders Markdown (`react-markdown` + GFM) with the panel's
-  type scale and semantic tokens; `docs-nav.tsx` — the page list (Guides, Screens, Backend; files
-  starting with `_` are left out).
+  type scale and semantic tokens.
+- `src/lib/docs/nav.ts` + `docs-nav.tsx` — the menu (tests: `nav.test.ts`):
+  - **Guides** and **Backend**: the folder's README as "Overview", then its pages in the order the
+    README links them.
+  - **Screens**: the panel's own navigation (`NAVIGATION` in `src/config/navigation.tsx`) — same
+    items, order and icons — each linked to the screen doc whose `routes` include its href; items
+    not built yet show as "Soon". Pages nest by folder (Welcome → Setup wizard → steps; Settings →
+    Discount codes). Files starting with `_` are left out.
 
 ## Writing for both GitHub and the site
 

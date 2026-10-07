@@ -7,9 +7,10 @@ status: prototype
 # Welcome
 
 The first page of a new rental business: a checklist that always shows the next thing to do, while
-the panel runs on demo data. `/` redirects here.
+the panel runs on demo data. `/` redirects here. Its steps lead into the
+[setup wizard](./setup/README.md).
 
-![Welcome, state A](../img/welcome-a.jpg)
+![Welcome, state A](../../img/welcome-a.jpg)
 
 ## States (onboarding stage Aâ€“D)
 
@@ -25,9 +26,9 @@ The page follows `OnboardingStatus.stage`.
 | D done | `/welcome?mock=imported-paid`   | Next steps without settings and payments                                                                                                      |
 | Error  | `/welcome?mock=error`           | Alert with "Try again"                                                                                                                        |
 
-| B                          | C                          | D                          |
-| -------------------------- | -------------------------- | -------------------------- |
-| ![B](../img/welcome-b.jpg) | ![C](../img/welcome-c.jpg) | ![D](../img/welcome-d.jpg) |
+| B                             | C                             | D                             |
+| ----------------------------- | ----------------------------- | ----------------------------- |
+| ![B](../../img/welcome-b.jpg) | ![C](../../img/welcome-c.jpg) | ![D](../../img/welcome-d.jpg) |
 
 ### Trial bar and plans
 
@@ -40,7 +41,7 @@ Premium**, which opens the **Choose a plan** dialog (monthly / annual, annual âˆ
 | Ending        | `/welcome?mock=trial-ending` |
 | Ended         | `/welcome?mock=trial-ended`  |
 
-![Plans dialog](../img/welcome-plans.jpg)
+![Plans dialog](../../img/welcome-plans.jpg)
 
 ## What the user can do
 
@@ -56,13 +57,13 @@ Premium**, which opens the **Choose a plan** dialog (monthly / annual, annual âˆ
   `welcomeIntro`, `importedTitle`, `importedSummary` (tests: `rules.test.ts`).
 - Trial and prices: `src/lib/billing/rules.ts` â†’ `trialStatus`, `showsTrial`, `monthlyPrice`,
   `annualTotal`, `PLANS` (tests: `rules.test.ts`). Prices are placeholders â€” see
-  [Decisions](../decisions.md#open).
+  [Decisions](../../decisions.md#open).
 
 ## Data
 
 `onboardingService.getStatus()` on load; `billingService.getSubscription()` for the trial bar,
-`choosePlan()` from the dialog. See [onboarding](../backend/onboarding.md) and
-[billing](../backend/billing.md).
+`choosePlan()` from the dialog. See [onboarding](../../backend/onboarding.md) and
+[billing](../../backend/billing.md).
 
 ## Components
 

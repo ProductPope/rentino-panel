@@ -10,7 +10,7 @@ jira: WHLZ-566
 Reusable codes clients enter at checkout, or staff add to an order. Jira epic **WHLZ-566** — the first
 section of the panel that was built.
 
-![Discount codes](../img/discount-codes.jpg)
+![Discount codes](../../img/discount-codes.jpg)
 
 ## Getting there
 
@@ -38,23 +38,23 @@ Sidebar → Settings → Discount codes. Needs the **Manage discount codes** per
 | Row → **Activate**   | Immediately, toast with Undo                                                    |
 | Row → **Delete**     | Only for codes never used. Confirm dialog ("can't be undone")                   |
 
-![Add code panel](../img/discount-codes-panel.jpg)
+![Add code panel](../../img/discount-codes-panel.jpg)
 
 **The panel**: Code (A–Z, 0–9, "-", "_"; typed lowercase becomes uppercase), Type, Value, Active;
 Validity (optional date range — without dates the code never expires); Internal note (team only).
 
 ## States
 
-| State       | How to see it                                                                     | What shows                                      |
-| ----------- | --------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Ready       | `/settings/discount-codes`                                                        | 7 demo codes, one of each status                |
-| Empty       | `?mock=empty`                                                                     | "No discount codes yet" + Add code              |
-| No matches  | search for something that isn't there                                             | "No codes match" + Clear search and filters     |
-| Error       | `?mock=error`                                                                     | "Discount codes couldn't be loaded" + Try again |
-| No access   | cookie `mock_user=staff` ([how](../mock-data.md#demo-users-the-mock_user-cookie)) | Lock + who to ask                               |
-| Dark, 320px | system dark mode / narrow window                                                  | ![dark](../img/discount-codes-dark.jpg)         |
+| State       | How to see it                                                                        | What shows                                      |
+| ----------- | ------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| Ready       | `/settings/discount-codes`                                                           | 7 demo codes, one of each status                |
+| Empty       | `?mock=empty`                                                                        | "No discount codes yet" + Add code              |
+| No matches  | search for something that isn't there                                                | "No codes match" + Clear search and filters     |
+| Error       | `?mock=error`                                                                        | "Discount codes couldn't be loaded" + Try again |
+| No access   | cookie `mock_user=staff` ([how](../../mock-data.md#demo-users-the-mock_user-cookie)) | Lock + who to ask                               |
+| Dark, 320px | system dark mode / narrow window                                                     | ![dark](../../img/discount-codes-dark.jpg)      |
 
-![No access](../img/discount-codes-no-access.jpg)
+![No access](../../img/discount-codes-no-access.jpg)
 
 ## Rules and validation
 
@@ -71,7 +71,7 @@ Validity (optional date range — without dates the code never expires); Interna
 
 `discountCodeRepository`: `list`, `create`, `update`, `setActive`, `remove`. Errors are
 `DiscountCodeError` with a reason (`not_found`, `in_use`, `duplicate_code`, `unavailable`) and a
-message shown to the user. See [discount codes backend](../backend/discount-codes.md).
+message shown to the user. See [discount codes backend](../../backend/discount-codes.md).
 
 ## Components
 
