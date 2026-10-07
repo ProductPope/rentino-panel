@@ -10,6 +10,7 @@ export const PAGES = [
   { name: "Welcome — D, imported", path: "/welcome?mock=imported" },
   { name: "Welcome — D, settings and payments done", path: "/welcome?mock=imported-paid" },
   { name: "Welcome — load error", path: "/welcome?mock=error" },
+  { name: "Welcome — trial ended", path: "/welcome?mock=trial-ended" },
   { name: "Setup 1 — your details", path: "/welcome/setup/sources" },
   { name: "Setup 3 — equipment by hand", path: "/welcome/setup/equipment" },
   { name: "Setup 4 — settings", path: "/welcome/setup/settings?mock=imported" },
