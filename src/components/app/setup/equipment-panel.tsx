@@ -1,7 +1,7 @@
 "use client"
 
-import { ImageIcon, PackageIcon, XIcon } from "lucide-react"
-import { useRef, useState } from "react"
+import { BoxesIcon, ImageIcon, PackageIcon, XIcon } from "lucide-react"
+import { useMemo, useRef, useState } from "react"
 
 import { EditPanel, EditPanelFields, EditPanelSection } from "@/components/eq/edit-panel"
 import { FormField } from "@/components/eq/form-field"
@@ -17,7 +17,9 @@ import {
 } from "@/components/ui/select"
 import { toast } from "@/components/ui/sonner"
 import {
+  draftUnits,
   EQUIPMENT_CATEGORIES,
+  firstNumber,
   NAME_MAX_LENGTH,
   normalizePrefix,
   onboardingService,
@@ -33,6 +35,7 @@ import {
 } from "@/lib/onboarding"
 
 import { kindOfError, PricingEditor } from "./pricing-editor"
+import { UnitList } from "./unit-list"
 
 /** The tab to open first: daily if the item has daily prices, else the first kind it has. */
 function firstTab(pricing: PricingDraft): RateKind {
@@ -46,7 +49,12 @@ function firstTab(pricing: PricingDraft): RateKind {
 
 /** Photos are kept in the browser (no backend), so they stay small. */
 const PHOTO_MAX_BYTES = 1024 * 1024
-const CATEGORY_ITEMS = EQUIPMENT_CATEGORIES.map((c) => ({ value: c.label, label: c.label }))
+/** "none" stands for no parent category (a Select item needs a value). */
+const NO_PARENT = "none"
+const CATEGORY_ITEMS = [
+  { value: NO_PARENT, label: "None" },
+  ...EQUIPMENT_CATEGORIES.map((c) => ({ value: c.label, label: c.label })),
+]
 
 const readAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -64,12 +72,18 @@ export function EquipmentPanel({
   open,
   onOpenChange,
   item,
+  itemsBefore,
+  takenCodes,
   onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** The item to edit; `undefined` adds a new one. Re-mount (key) the panel per opening. */
   item?: EquipmentItem
+  /** Items listed before this one: default unit numbers continue after theirs. */
+  itemsBefore: EquipmentItem[]
+  /** Unit codes of every other item; a unit's own code can't repeat one. */
+  takenCodes: Set<string>
   onSaved: (item: EquipmentItem, added: boolean) => void
 }) {
   const [draft, setDraft] = useState<EquipmentDraft>(() => toEquipmentDraft(item))
@@ -79,11 +93,14 @@ export function EquipmentPanel({
   const [tab, setTab] = useState<RateKind>(() => firstTab(draft.pricing))
   const formRef = useRef<HTMLFormElement>(null)
 
-  const errors = showErrors ? validateEquipment(draft) : {}
+  const first = firstNumber(itemsBefore, draft.codePrefix)
+  const check = (d: EquipmentDraft) => validateEquipment(d, { firstNumber: first, takenCodes })
+  const errors = showErrors ? check(draft) : {}
+  const units = useMemo(() => draftUnits(draft, first), [draft, first])
   const update = (patch: Partial<EquipmentDraft>) => setDraft((d) => ({ ...d, ...patch }))
 
   async function save(stay: boolean) {
-    const problems = Object.keys(validateEquipment(draft))
+    const problems = Object.keys(check(draft))
     if (problems.length > 0) {
       setShowErrors(true)
       // An error in a closed rate tab: open that tab so focus can reach the field.
@@ -118,14 +135,17 @@ export function EquipmentPanel({
     }
   }
 
+  async function readPhoto(file: File): Promise<{ url?: string; error?: string }> {
+    if (file.size > PHOTO_MAX_BYTES) return { error: "Choose a photo under 1 MB." }
+    return { url: await readAsDataUrl(file) }
+  }
+
   async function choosePhoto(file: File | undefined) {
     setPhotoError(undefined)
     if (!file) return
-    if (file.size > PHOTO_MAX_BYTES) {
-      setPhotoError("Choose a photo under 1 MB.")
-      return
-    }
-    update({ photoUrl: await readAsDataUrl(file) })
+    const result = await readPhoto(file)
+    setPhotoError(result.error)
+    if (result.url) update({ photoUrl: result.url })
   }
 
   const title = item ? `Edit ${item.name}` : "Add equipment"
@@ -189,26 +209,30 @@ export function EquipmentPanel({
               )}
             </FormField>
 
-            <FormField label="Category" required error={errors.category}>
+            <FormField
+              label="Parent category"
+              description="Optional. Groups equipment, e.g. under Bikes."
+            >
               {(field) => (
                 <Select
                   items={CATEGORY_ITEMS}
-                  value={draft.category || null}
+                  value={draft.parentCategory || NO_PARENT}
                   onValueChange={(value) => {
-                    const category = String(value ?? "")
+                    const parentCategory = value === NO_PARENT ? "" : String(value ?? "")
                     setDraft((d) => ({
                       ...d,
-                      category,
+                      parentCategory,
                       // Follow the category until the customer types their own prefix.
                       codePrefix:
-                        !d.codePrefix || d.codePrefix === prefixFor(d.category)
-                          ? prefixFor(category)
+                        prefixFor(parentCategory) &&
+                        (!d.codePrefix || d.codePrefix === prefixFor(d.parentCategory))
+                          ? prefixFor(parentCategory)
                           : d.codePrefix,
                     }))
                   }}
                 >
                   <SelectTrigger className="w-full" {...field}>
-                    <SelectValue placeholder="Choose a category" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORY_ITEMS.map((c) => (
@@ -221,47 +245,6 @@ export function EquipmentPanel({
               )}
             </FormField>
 
-            <FormField
-              label="Number of units"
-              required
-              description="How many of it you rent out."
-              error={errors.units}
-            >
-              {(field) => (
-                <Input
-                  {...field}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  className="max-w-32 font-mono"
-                  value={draft.units}
-                  onChange={(e) => update({ units: e.target.value.trim() })}
-                />
-              )}
-            </FormField>
-
-            <FormField
-              label="Code"
-              required
-              description={
-                draft.codePrefix.length >= 2
-                  ? `Units get codes ${draft.codePrefix}-001, ${draft.codePrefix}-002, …`
-                  : "Units get codes like BIK-001. Letters and digits."
-              }
-              error={errors.codePrefix}
-            >
-              {(field) => (
-                <Input
-                  {...field}
-                  autoComplete="off"
-                  spellCheck={false}
-                  maxLength={PREFIX_MAX_LENGTH}
-                  className="max-w-32 font-mono uppercase"
-                  value={draft.codePrefix}
-                  onChange={(e) => update({ codePrefix: normalizePrefix(e.target.value) })}
-                />
-              )}
-            </FormField>
-
             {draft.photoUrl ? (
               <div className="flex items-center gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element -- a data URL or a local demo photo */}
@@ -270,7 +253,9 @@ export function EquipmentPanel({
                   alt=""
                   className="size-16 rounded-md bg-white object-contain"
                 />
-                <span className="flex-1 text-body text-muted-foreground">Photo added</span>
+                <span className="flex-1 text-body text-muted-foreground">
+                  Equipment photo added. Units without their own photo show it.
+                </span>
                 <IconButton
                   label="Remove photo"
                   size="sm"
@@ -282,7 +267,7 @@ export function EquipmentPanel({
             ) : (
               <FormField
                 label="Photo"
-                description="Optional. JPG or PNG, up to 1 MB."
+                description="Optional. JPG or PNG, up to 1 MB. Units without their own photo show it."
                 error={photoError}
               >
                 {(field) => (
@@ -296,6 +281,60 @@ export function EquipmentPanel({
               </FormField>
             )}
           </EditPanelFields>
+        </EditPanelSection>
+
+        <EditPanelSection title="Units" icon={<BoxesIcon aria-hidden="true" />}>
+          <div className="flex flex-col gap-4">
+            <EditPanelFields>
+              <FormField
+                label="Number of units"
+                required
+                description="How many of it you rent out."
+                error={errors.units}
+              >
+                {(field) => (
+                  <Input
+                    {...field}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    className="max-w-32 font-mono"
+                    value={draft.units}
+                    onChange={(e) => update({ units: e.target.value.trim() })}
+                  />
+                )}
+              </FormField>
+
+              <FormField
+                label="Code"
+                required
+                description={
+                  draft.codePrefix.length >= 2
+                    ? `Units get codes from ${draft.codePrefix}-${String(first).padStart(3, "0")}; you can change each unit's code below.`
+                    : "Units get codes like BIK-001. Letters and digits."
+                }
+                error={errors.codePrefix}
+              >
+                {(field) => (
+                  <Input
+                    {...field}
+                    autoComplete="off"
+                    spellCheck={false}
+                    maxLength={PREFIX_MAX_LENGTH}
+                    className="max-w-32 font-mono uppercase"
+                    value={draft.codePrefix}
+                    onChange={(e) => update({ codePrefix: normalizePrefix(e.target.value) })}
+                  />
+                )}
+              </FormField>
+            </EditPanelFields>
+            <UnitList
+              units={units}
+              overrides={draft.unitOverrides}
+              errors={errors}
+              onChange={(unitOverrides) => update({ unitOverrides })}
+              onPhoto={readPhoto}
+            />
+          </div>
         </EditPanelSection>
 
         <PricingEditor

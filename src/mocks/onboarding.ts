@@ -107,7 +107,7 @@ function seedEquipment(): EquipmentItem[] {
     {
       id: "demo-trek-marlin-7",
       name: "Trek Marlin 7 Mountain Bike",
-      category: "Bikes",
+      parentCategory: "Bikes",
       units: 1,
       codePrefix: "BIK",
       pricing: {
@@ -141,7 +141,7 @@ function seedEquipment(): EquipmentItem[] {
     {
       id: "demo-club-car-tempo",
       name: "Club Car Tempo",
-      category: "Golf carts",
+      parentCategory: "Golf carts",
       units: 1,
       codePrefix: "GLF",
       pricing: {
@@ -169,7 +169,7 @@ function seedEquipment(): EquipmentItem[] {
     {
       id: "demo-wilson-pro-staff-rf97",
       name: "Wilson Pro Staff RF97 Autograph",
-      category: "Tennis rackets",
+      parentCategory: "Tennis rackets",
       units: 1,
       codePrefix: "TNS",
       pricing: {
@@ -190,10 +190,17 @@ const stored = persisted<EquipmentItem[]>("rentino.mock.equipment", seedEquipmen
 /** Items saved before price lists (a daily and a weekly price only) are read as price lists. */
 type LegacyItem = Omit<EquipmentItem, "pricing"> & {
   pricing?: Pricing
+  /** Before parent categories, every item had a (required) category. */
+  category?: string
   pricePerDay?: number
   pricePerWeek?: number | null
 }
-function migrate(item: LegacyItem): EquipmentItem {
+function migrate(legacy: LegacyItem): EquipmentItem {
+  const { category, ...withoutCategory } = legacy
+  const item: LegacyItem =
+    category && !legacy.parentCategory
+      ? { ...withoutCategory, parentCategory: category }
+      : withoutCategory
   if (item.pricing) return item as EquipmentItem
   const { pricePerDay, pricePerWeek, ...rest } = item
   return {

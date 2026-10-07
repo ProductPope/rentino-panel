@@ -80,7 +80,7 @@ describe("simulated preparing", () => {
 describe("equipment added by hand", () => {
   const input = {
     name: "City bike",
-    category: "Bikes",
+    parentCategory: "Bikes",
     units: 14,
     codePrefix: "BIK",
     pricing: { ...emptyPricing(), daily: [{ id: "d", from: 1, to: null, price: 18 }] },
@@ -187,6 +187,8 @@ describe("saved before price lists", () => {
       },
     })
     const [item] = await mockOnboardingService.listEquipment()
+    expect(item?.parentCategory).toBe("Kayaks")
+    expect(item).not.toHaveProperty("category")
     expect(item?.pricing).toMatchObject({
       daily: [{ from: 1, to: null, price: 40 }],
       weekly: [{ from: 1, to: null, price: 200 }],

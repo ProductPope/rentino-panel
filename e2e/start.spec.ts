@@ -13,7 +13,7 @@ async function approveOwnItem(page: Page) {
   await page.getByRole("button", { name: "Add equipment" }).first().click()
   const panel = page.getByRole("dialog")
   await panel.getByRole("textbox", { name: "Name" }).fill("City bike")
-  await panel.getByRole("combobox", { name: "Category" }).click()
+  await panel.getByRole("combobox", { name: "Parent category" }).click()
   await page.getByRole("option", { name: "Bikes", exact: true }).click()
   await panel.getByRole("textbox", { name: "Number of units" }).fill("14")
   await panel.getByRole("textbox", { name: "Price per day" }).fill("18")

@@ -18,7 +18,7 @@ async function openAddPanel(page: Page) {
 async function fillItem(page: Page, name: string, units = "14", price = "18") {
   const p = panel(page)
   await p.getByRole("textbox", { name: "Name" }).fill(name)
-  await p.getByRole("combobox", { name: "Category" }).click()
+  await p.getByRole("combobox", { name: "Parent category" }).click()
   await page.getByRole("option", { name: "Bikes", exact: true }).click()
   await p.getByRole("textbox", { name: "Number of units" }).fill(units)
   await p.getByRole("textbox", { name: "Price per day" }).fill(price)
@@ -182,7 +182,8 @@ test.describe("side panel", () => {
     await p.getByRole("button", { name: "Add equipment" }).click()
     await expect(p.getByRole("textbox", { name: "Name" })).toBeFocused()
     await expect(p.getByText("Enter a name.")).toBeVisible()
-    await expect(p.getByText("Choose a category.")).toBeVisible()
+    // The parent category is optional.
+    await expect(p.getByText("Choose a category.")).toHaveCount(0)
     await expect(p.getByText("Enter a price.")).toBeVisible()
   })
 
@@ -191,7 +192,9 @@ test.describe("side panel", () => {
     const p = await openAddPanel(page)
     await fillItem(page, "City bike")
     await expect(p.getByRole("textbox", { name: "Code" })).toHaveValue("BIK")
-    await expect(p.getByText("Units get codes BIK-001, BIK-002, …")).toBeVisible()
+    await expect(
+      p.getByText("Units get codes from BIK-002; you can change each unit's code below.")
+    ).toBeVisible()
     await p.getByRole("button", { name: "Add equipment" }).click()
     await expect(panel(page)).toBeHidden()
     // Numbering continues after the demo bike: BIK-002…BIK-015.
@@ -223,12 +226,111 @@ test.describe("side panel", () => {
     await expect(row(page, "Trek Marlin 7")).toContainText("5 units: BIK-001…BIK-005")
   })
 
+  test("without a parent category the item still saves", async ({ page }) => {
+    await open(page, URL)
+    const p = await openAddPanel(page)
+    await p.getByRole("textbox", { name: "Name" }).fill("Kayak")
+    await p.getByRole("textbox", { name: "Code" }).fill("KAY")
+    await p.getByRole("textbox", { name: "Number of units" }).fill("2")
+    await p.getByRole("textbox", { name: "Price per day" }).fill("30")
+    await p.getByRole("button", { name: "Add equipment" }).click()
+    await expect(panel(page)).toBeHidden()
+    await expect(row(page, "Kayak")).toContainText("2 units: KAY-001…KAY-002")
+  })
+
   for (const theme of THEMES)
     test(`axe with the panel open and errors shown — ${theme}`, async ({ page }) => {
       await open(page, URL, theme)
       const p = await openAddPanel(page)
       await p.getByRole("button", { name: "Add equipment" }).click()
       await expect(p.getByText("Enter a name.")).toBeVisible()
+      await expectNoAxeViolations(page, '[role="dialog"]')
+    })
+})
+
+test.describe("units", () => {
+  const units = (page: Page) => panel(page).getByRole("list", { name: "Units" })
+  const unit = (page: Page, code: string) =>
+    units(page).getByRole("listitem", { name: `Unit ${code}` })
+  const photo = {
+    name: "unit.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "base64"
+    ),
+  }
+  const editTrek = (page: Page) =>
+    page
+      .getByRole("button", { name: "Edit prices and details of Trek Marlin 7 Mountain Bike" })
+      .click()
+
+  test("a unit gets its own code, name and photo; others show the equipment's", async ({
+    page,
+  }) => {
+    await open(page, URL)
+    await editTrek(page)
+    const p = panel(page)
+    await p.getByRole("textbox", { name: "Number of units" }).fill("3")
+    await expect(units(page).getByRole("listitem")).toHaveCount(3)
+    // Units without a photo of their own show the equipment photo.
+    await expect(unit(page, "BIK-002").locator("img")).toHaveAttribute("src", /trek/i)
+
+    await unit(page, "BIK-002").getByRole("button", { name: "Edit unit BIK-002" }).click()
+    // The row is named after its code, which changes as you type: find it by position.
+    const u = units(page).getByRole("listitem").nth(1)
+    await u.getByRole("textbox", { name: "Unit code" }).fill("wsbc 123")
+    await expect(u.getByRole("textbox", { name: "Unit code" })).toHaveValue("WSBC123")
+    await u.getByRole("textbox", { name: "Unit name" }).fill("Size L, red")
+    await u.getByLabel("Unit photo").setInputFiles(photo)
+    await expect(u.getByRole("button", { name: "Remove the photo of WSBC123" })).toBeVisible()
+    await expect(u).toContainText("own code · own name · own photo")
+    await p.getByRole("button", { name: "Save" }).click()
+    await expect(panel(page)).toBeHidden()
+
+    const trek = row(page, "Trek Marlin 7")
+    await expect(trek).toContainText("3 units: BIK-001, WSBC123, BIK-003")
+    await expect(trek.getByRole("heading", { name: "Units with their own details" })).toBeVisible()
+    await expect(trek).toContainText("Size L, red")
+  })
+
+  test("a code another unit uses is an error at that unit, which opens and takes focus", async ({
+    page,
+  }) => {
+    await open(page, URL)
+    await editTrek(page)
+    const p = panel(page)
+    await p.getByRole("textbox", { name: "Number of units" }).fill("2")
+    await unit(page, "BIK-002").getByRole("button", { name: "Edit unit BIK-002" }).click()
+    await units(page)
+      .getByRole("listitem")
+      .nth(1)
+      .getByRole("textbox", { name: "Unit code" })
+      .fill("GLF-001")
+    // Collapse it: the error opens it again.
+    await unit(page, "GLF-001").getByRole("button", { name: "Edit unit GLF-001" }).click()
+    await p.getByRole("button", { name: "Save" }).click()
+    const code = unit(page, "GLF-001").getByRole("textbox", { name: "Unit code" })
+    await expect(code).toBeFocused()
+    await expect(p.getByText("GLF-001 is already used. Codes must be unique.")).toBeVisible()
+    await expect(panel(page)).toBeVisible()
+  })
+
+  test("long lists show ten units, then all", async ({ page }) => {
+    await open(page, URL)
+    await editTrek(page)
+    await panel(page).getByRole("textbox", { name: "Number of units" }).fill("25")
+    await expect(units(page).getByRole("listitem")).toHaveCount(10)
+    await panel(page).getByRole("button", { name: "Show all 25 units" }).click()
+    await expect(units(page).getByRole("listitem")).toHaveCount(25)
+  })
+
+  for (const theme of THEMES)
+    test(`axe with a unit open — ${theme}`, async ({ page }) => {
+      await open(page, URL, theme)
+      await editTrek(page)
+      await unit(page, "BIK-001").getByRole("button", { name: "Edit unit BIK-001" }).click()
+      await expect(unit(page, "BIK-001").getByRole("textbox", { name: "Unit code" })).toBeVisible()
       await expectNoAxeViolations(page, '[role="dialog"]')
     })
 })
