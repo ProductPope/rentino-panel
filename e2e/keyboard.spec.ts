@@ -160,9 +160,16 @@ test.describe("account menu", () => {
     await expect(page.getByText("Signed out")).toBeVisible()
   })
 
-  test("View booking page opens the booking page stand-in", async ({ page }) => {
+  test("View booking page opens the booking page stand-in in a new tab, and says so", async ({
+    page,
+  }) => {
     await open(page, "/settings/discount-codes")
-    await page.getByRole("link", { name: "View booking page" }).click()
-    await expect(page.getByRole("heading", { level: 1, name: "Booking page" })).toBeVisible()
+    const link = page.getByRole("link", { name: /^View booking page/ })
+    await expect(link).toHaveAccessibleName("View booking page (opens in a new tab)")
+    await expect(link).toHaveAttribute("target", "_blank")
+    const [tab] = await Promise.all([page.context().waitForEvent("page"), link.click()])
+    await expect(tab.getByRole("heading", { level: 1, name: "Booking page" })).toBeVisible()
+    // The panel stays where it was.
+    await expect(page).toHaveURL(/\/settings\/discount-codes$/)
   })
 })

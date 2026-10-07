@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRightIcon } from "lucide-react"
+import { ArrowRightIcon, ExternalLinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useId } from "react"
 
@@ -18,18 +18,34 @@ export interface StepCardProps {
   headingLevel: 2 | 3
   /** Route for a step that navigates; otherwise `onAction` runs. */
   href?: string
+  /** The link opens another site (the booking page) in a new tab. */
+  external?: boolean
   onAction: (action: WelcomeAction) => void
 }
 
 /** One onboarding step: number (or spinner), title, description, a single call to action. */
-export function StepCard({ step, number, headingLevel, href, onAction }: StepCardProps) {
+export function StepCard({
+  step,
+  number,
+  headingLevel,
+  href,
+  external = false,
+  onAction,
+}: StepCardProps) {
   const titleId = useId()
   const Heading = headingLevel === 2 ? "h2" : "h3"
   const variant = step.highlighted ? "default" : "outline"
   const content = (
     <>
       {step.cta}
-      <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+      {external ? (
+        <>
+          <ExternalLinkIcon data-icon="inline-end" aria-hidden="true" />
+          <span className="sr-only">(opens in a new tab)</span>
+        </>
+      ) : (
+        <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+      )}
     </>
   )
 
@@ -69,7 +85,12 @@ export function StepCard({ step, number, headingLevel, href, onAction }: StepCar
           </div>
           {href ? (
             // A real link (it navigates), styled as a button.
-            <Link href={href} aria-describedby={titleId} className={buttonVariants({ variant })}>
+            <Link
+              href={href}
+              aria-describedby={titleId}
+              className={buttonVariants({ variant })}
+              {...(external ? { target: "_blank", rel: "noopener" } : {})}
+            >
               {content}
             </Link>
           ) : (
