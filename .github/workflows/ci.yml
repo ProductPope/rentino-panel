@@ -58,6 +58,8 @@ jobs:
       - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm lint:tokens
       - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm lint:docs
+      - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm format:check
       - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm typecheck

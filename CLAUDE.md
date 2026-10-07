@@ -45,7 +45,7 @@ Node ≥ 22 · ESLint (next + jsx-a11y strict) · Prettier · Playwright + @axe-
 ```bash
 pnpm install
 pnpm dev                      # http://localhost:3000
-pnpm lint && pnpm lint:tokens && pnpm format:check && pnpm typecheck && pnpm test
+pnpm lint && pnpm lint:tokens && pnpm lint:docs && pnpm format:check && pnpm typecheck && pnpm test
 pnpm build && pnpm test:e2e   # e2e runs against the production build
 ./scripts/check-registry.sh   # components still match @eq
 ```
@@ -57,6 +57,20 @@ few, validated batches (every push to a ready PR is a full CI run; a newer push 
 one), mark _Ready for review_ when done. The push to `main` after a merge reuses the green PR result
 when the tree is identical. What may be skipped is decided in `.github/scripts/ci-decide.sh` — always
 with a full-run fallback; never skip or disable tests to save minutes. Every job has `timeout-minutes`.
+
+## Docs — updated in the same PR, always
+
+`docs/` is the handoff for frontend developers (screens, mocks, architecture) with guidelines for the
+backend. Keep it current **as part of every change**, without being asked — a PR that changes behaviour
+without its docs is not done. Map of what to update: `docs/README.md` → "Keeping the docs current".
+
+- New route or screen → `docs/screens/<name>.md` from `_template.md` + a row in `docs/screens/README.md`.
+- Changed screen → its page; refresh screenshots (`pnpm build && pnpm docs:screens`, shots in
+  `scripts/docs/screens.spec.ts`) when what it shows changed.
+- Service method, error reason, permission or business rule → `docs/backend/<domain>.md`.
+- `?mock=` scenario, demo user, `rentino.mock.*` key → `docs/mock-data.md`.
+- Product/design decision or open question → `docs/decisions.md`; EQ stand-in → `docs/eq-librium-gaps.md`.
+- `pnpm lint:docs` (CI) checks routes, index, mock scenarios and keys, services, permissions and links.
 
 ## Working agreements
 
