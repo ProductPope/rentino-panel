@@ -36,7 +36,10 @@ const routes = files(APP, (p) => p.endsWith("/page.tsx")).map((p) => {
   return "/" + segments.join("/")
 })
 const SCREENS = join(ROOT, "docs/screens")
-const screenDocs = files(SCREENS, (p) => p.endsWith(".md") && !/\/(README|_template)\.md$/.test(p))
+const screenDocs = files(
+  SCREENS,
+  (p) => p.endsWith(".md") && p !== join(SCREENS, "README.md") && !p.endsWith("/_template.md")
+)
 const documented = new Set()
 for (const doc of screenDocs) {
   const front = read(doc).match(/^---\n([\s\S]*?)\n---/)
@@ -48,11 +51,19 @@ for (const route of routes)
   if (!documented.has(route))
     fail(`route ${route} has no screen doc — add docs/screens/<name>.md with routes: [${route}]`)
 
-// 2. Screen docs → index
-const index = existsSync(join(SCREENS, "README.md")) ? read(join(SCREENS, "README.md")) : ""
+// 2. Screen docs → their folder's README (it orders the docs menu) and the screens index
+const linksTo = (from, doc) =>
+  [...read(from).matchAll(/\]\(([^)\s#]+)/g)].some(([, href]) => join(dirname(from), href) === doc)
+const screensIndex = join(SCREENS, "README.md")
 for (const doc of screenDocs) {
-  const name = relative(SCREENS, doc)
-  if (!index.includes(`](./${name})`)) fail(`docs/screens/README.md doesn't link ${name}`)
+  const folder = doc.endsWith("/README.md") ? dirname(dirname(doc)) : dirname(doc)
+  const parent = join(folder, "README.md")
+  if (!existsSync(parent) || !linksTo(parent, doc))
+    fail(
+      `${rel(parent)} doesn't link ${relative(folder, doc)} — the folder's README orders the menu`
+    )
+  if (parent !== screensIndex && !linksTo(screensIndex, doc))
+    fail(`docs/screens/README.md doesn't list ${relative(SCREENS, doc)}`)
 }
 
 // 3. Mock scenarios and storage keys → mock-data.md

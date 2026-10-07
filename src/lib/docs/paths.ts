@@ -78,3 +78,23 @@ export function titleOf(file: string, source: string) {
   const heading = body.match(/^# (.+)$/m)?.[1]
   return heading?.trim() ?? file
 }
+
+/** The docs files a page links to (relative .md links), in order of first appearance. */
+export function linkedFiles(from: string, markdown: string) {
+  const found: string[] = []
+  for (const [, href] of markdown.replace(/```[\s\S]*?```/g, "").matchAll(/\]\(([^)\s]+)\)/g)) {
+    if (!href || /^([a-z]+:|#)/i.test(href)) continue
+    const target = resolvePath(from, decodeURI(href.split("#")[0] ?? ""))
+    if (target.endsWith(".md") && !target.startsWith("../") && !found.includes(target))
+      found.push(target)
+  }
+  return found
+}
+
+/** `routes: [/a, /b]` from front matter. */
+export const routesOf = (value: string | undefined) =>
+  (value ?? "")
+    .replace(/^\[|\]$/g, "")
+    .split(",")
+    .map((r) => r.trim())
+    .filter(Boolean)

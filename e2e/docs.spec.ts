@@ -5,24 +5,58 @@ import { expectNoAxeViolations, open, THEMES } from "./helpers"
 const nav = (page: Page) => page.getByRole("navigation", { name: "Documentation" })
 
 test.describe("docs site", () => {
-  test("home: the docs README, every page in the navigation, the current one marked", async ({
-    page,
-  }) => {
+  test("home: Guides, Screens and Backend; the current page marked", async ({ page }) => {
     await open(page, "/docs")
     await expect(
       page.getByRole("heading", { level: 1, name: "Rentino panel — documentation" })
     ).toBeVisible()
-    await expect(
-      nav(page).getByRole("link", { name: "Rentino panel — documentation" })
-    ).toHaveAttribute("aria-current", "page")
-    for (const name of [
-      "Mock data and states",
-      "Setup 3 — Equipment and prices",
-      "Backend guidelines",
-    ])
-      await expect(nav(page).getByRole("link", { name })).toBeVisible()
+    for (const name of ["Guides", "Screens", "Backend"])
+      await expect(nav(page).getByRole("heading", { name })).toBeVisible()
+    await expect(nav(page).getByRole("link", { name: "Overview" }).first()).toHaveAttribute(
+      "aria-current",
+      "page"
+    )
+    await expect(nav(page).getByRole("link", { name: "Mock data and states" })).toBeVisible()
     // The screen template is for authors, not a page to browse.
     await expect(nav(page).getByRole("link", { name: "Screen name" })).toHaveCount(0)
+  })
+
+  test("Screens mirror the panel navigation, nested, with what isn't built marked Soon", async ({
+    page,
+  }) => {
+    await open(page, "/docs/screens/welcome/setup/equipment")
+    const welcome = nav(page)
+      .getByRole("listitem")
+      .filter({
+        has: page.getByRole("link", { name: "Welcome", exact: true }),
+      })
+    const wizard = welcome.getByRole("listitem").filter({
+      has: page.getByRole("link", { name: "Setup wizard" }),
+    })
+    await expect(wizard.getByRole("link")).toHaveText([
+      "Setup wizard",
+      "1 · Your details",
+      "2 · Preparing",
+      "3 · Equipment and prices",
+      "4 · Settings",
+      "5 · Start",
+    ])
+    await expect(wizard.getByRole("link", { name: "3 · Equipment and prices" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    )
+    const settings = nav(page)
+      .getByRole("listitem")
+      .filter({
+        has: page.getByRole("link", { name: "Settings", exact: true }),
+      })
+    await expect(settings.getByRole("link", { name: "Discount codes" })).toHaveAttribute(
+      "href",
+      "/docs/screens/settings/discount-codes"
+    )
+    // Sections the panel doesn't have yet: plain text, not links.
+    await expect(nav(page).getByText("Dashboard")).toBeVisible()
+    await expect(nav(page).getByRole("link", { name: "Dashboard" })).toHaveCount(0)
   })
 
   test("links between docs stay on the site; files outside docs/ open on GitHub", async ({
@@ -46,7 +80,7 @@ test.describe("docs site", () => {
   })
 
   test("screenshots load; headings have anchors", async ({ page }) => {
-    await open(page, "/docs/screens/setup-3-equipment")
+    await open(page, "/docs/screens/welcome/setup/equipment")
     const shot = page.getByRole("img", { name: "Setup step 3" })
     await expect(shot).toHaveAttribute("src", "/docs/img/setup-3-equipment.jpg")
     await expect(shot).toHaveJSProperty("complete", true)
