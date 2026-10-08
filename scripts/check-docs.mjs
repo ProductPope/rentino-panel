@@ -1,10 +1,12 @@
 // Fails when docs/ falls behind the code. It checks what can be checked mechanically:
-//   1. every route (src/app/**/page.tsx) is listed in the `routes:` of a screen doc (docs/screens/*.md);
-//   2. every screen doc is linked from docs/screens/README.md;
-//   3. every mock scenario (`?mock=…`) and localStorage key (`rentino.mock.…`) in src/mocks is in
-//      docs/mock-data.md;
+//   1. every route (src/app/**/page.tsx) is listed in the `routes:` of a screen doc (docs/screens/**);
+//   2. every page in docs/screens/ is linked from its folder's README (that orders the menu), and every
+//      screen doc from docs/screens/README.md;
+//   3. every mock scenario (`?mock=…`) and localStorage key (`rentino.mock.…`) in src/mocks is on a
+//      feature's mock data page (docs/screens/**/mock-data.md);
 //   4. every service interface in src/lib/*/ (…Service, …Repository, AuditLog) and every permission is
-//      described in docs/backend/;
+//      on a feature's backend page (docs/screens/**/backend.md), and every backend page says it is a
+//      suggestion;
 //   5. every relative link and image in docs/ and README.md points to a file that exists.
 // What it can't check — that the words are still true — is on the PR author (CLAUDE.md, "Docs").
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
@@ -36,10 +38,15 @@ const routes = files(APP, (p) => p.endsWith("/page.tsx")).map((p) => {
   return "/" + segments.join("/")
 })
 const SCREENS = join(ROOT, "docs/screens")
-const screenDocs = files(
+const screensPages = files(
   SCREENS,
   (p) => p.endsWith(".md") && p !== join(SCREENS, "README.md") && !p.endsWith("/_template.md")
 )
+/** A feature's notes next to its screens — not screens themselves. */
+const isNote = (p) => /\/(mock-data|backend)\.md$/.test(p)
+const screenDocs = screensPages.filter((p) => !isNote(p))
+const mockPages = screensPages.filter((p) => p.endsWith("/mock-data.md"))
+const backendPages = screensPages.filter((p) => p.endsWith("/backend.md"))
 const documented = new Set()
 for (const doc of screenDocs) {
   const front = read(doc).match(/^---\n([\s\S]*?)\n---/)
@@ -55,51 +62,55 @@ for (const route of routes)
 const linksTo = (from, doc) =>
   [...read(from).matchAll(/\]\(([^)\s#]+)/g)].some(([, href]) => join(dirname(from), href) === doc)
 const screensIndex = join(SCREENS, "README.md")
-for (const doc of screenDocs) {
+for (const doc of screensPages) {
   const folder = doc.endsWith("/README.md") ? dirname(dirname(doc)) : dirname(doc)
   const parent = join(folder, "README.md")
   if (!existsSync(parent) || !linksTo(parent, doc))
     fail(
       `${rel(parent)} doesn't link ${relative(folder, doc)} — the folder's README orders the menu`
     )
-  if (parent !== screensIndex && !linksTo(screensIndex, doc))
+  if (!isNote(doc) && parent !== screensIndex && !linksTo(screensIndex, doc))
     fail(`docs/screens/README.md doesn't list ${relative(SCREENS, doc)}`)
 }
 
-// 3. Mock scenarios and storage keys → mock-data.md
+// 3. Mock scenarios and storage keys → the features' mock data pages
 const mockSources = files(
   join(ROOT, "src/mocks"),
   (p) => /\.ts$/.test(p) && !p.endsWith(".test.ts")
 )
   .map(read)
   .join("\n")
-const mockDoc = existsSync(join(ROOT, "docs/mock-data.md"))
-  ? read(join(ROOT, "docs/mock-data.md"))
-  : ""
+const mockDoc = mockPages.map(read).join("\n")
 for (const [, scenario] of mockSources.matchAll(/\?mock=([a-z-]+)/g))
   if (!new RegExp(`\\?mock=${scenario}(?![\\w-])`).test(mockDoc))
-    fail(`docs/mock-data.md doesn't list ?mock=${scenario}`)
+    fail(
+      `no feature's mock-data.md lists ?mock=${scenario} — add it to docs/screens/<feature>/mock-data.md`
+    )
 for (const [key] of mockSources.matchAll(/rentino\.mock\.[a-z-]+/g))
   if (!new RegExp(`${key.replaceAll(".", "\\.")}(?![\\w-])`).test(mockDoc))
-    fail(`docs/mock-data.md doesn't list localStorage key ${key}`)
+    fail(`no feature's mock-data.md lists localStorage key ${key}`)
 
-// 4. Service interfaces and permissions → backend docs
-const backend = files(join(ROOT, "docs/backend"), (p) => p.endsWith(".md"))
-  .map(read)
-  .join("\n")
+// 4. Service interfaces and permissions → the features' backend pages, each marked a suggestion
+const backend = backendPages.map(read).join("\n")
+const SUGGESTION = /\*\*This is a suggestion, not a specification\.\*\*/
+for (const page of [...backendPages, join(ROOT, "docs/backend.md")])
+  if (existsSync(page) && !SUGGESTION.test(read(page)))
+    fail(
+      `${rel(page)} must open with "**This is a suggestion, not a specification.**" (see others)`
+    )
 const libSources = files(join(ROOT, "src/lib"), (p) => /\.ts$/.test(p) && !p.endsWith(".test.ts"))
 for (const source of libSources)
   for (const [, name] of read(source).matchAll(
     /export interface (\w+(?:Service|Repository)|AuditLog)\b/g
   ))
     if (!backend.includes(`\`${name}\``))
-      fail(`docs/backend/ doesn't describe \`${name}\` (${rel(source)})`)
+      fail(`no feature's backend.md describes \`${name}\` (${rel(source)})`)
 const permissions = read(join(ROOT, "src/lib/session/types.ts")).match(
   /export type Permission\s*=([^\n]+)/
 )
 for (const [, permission] of permissions?.[1].matchAll(/"([^"]+)"/g) ?? [])
   if (!backend.includes(`\`${permission}\``))
-    fail(`docs/backend/ doesn't describe permission \`${permission}\``)
+    fail(`no feature's backend.md describes permission \`${permission}\``)
 
 // 5. Links and images
 const docs = [

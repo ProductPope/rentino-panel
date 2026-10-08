@@ -5,18 +5,20 @@ import { expectNoAxeViolations, open, THEMES } from "./helpers"
 const nav = (page: Page) => page.getByRole("navigation", { name: "Documentation" })
 
 test.describe("docs site", () => {
-  test("home: Guides, Screens and Backend; the current page marked", async ({ page }) => {
+  test("home: Guides and Screens; the current page marked", async ({ page }) => {
     await open(page, "/docs")
     await expect(
       page.getByRole("heading", { level: 1, name: "Rentino panel — documentation" })
     ).toBeVisible()
-    for (const name of ["Guides", "Screens", "Backend"])
+    for (const name of ["Guides", "Screens"])
       await expect(nav(page).getByRole("heading", { name })).toBeVisible()
+    // Backend notes live with their features, not in a group of their own.
+    await expect(nav(page).getByRole("heading", { name: "Backend" })).toHaveCount(0)
     await expect(nav(page).getByRole("link", { name: "Overview" }).first()).toHaveAttribute(
       "aria-current",
       "page"
     )
-    await expect(nav(page).getByRole("link", { name: "Mock data and states" })).toBeVisible()
+    await expect(nav(page).getByRole("link", { name: "Mock data", exact: true })).toBeVisible()
     // The screen template is for authors, not a page to browse.
     await expect(nav(page).getByRole("link", { name: "Screen name" })).toHaveCount(0)
   })
@@ -40,6 +42,8 @@ test.describe("docs site", () => {
       "3 · Equipment and prices",
       "4 · Settings",
       "5 · Start",
+      "Mock data and states",
+      "Backend (suggestion)",
     ])
     await expect(wizard.getByRole("link", { name: "3 · Equipment and prices" })).toHaveAttribute(
       "aria-current",
@@ -54,6 +58,14 @@ test.describe("docs site", () => {
       "href",
       "/docs/screens/settings/discount-codes"
     )
+    // A feature's mock data and backend suggestion sit under it.
+    const codes = settings.getByRole("listitem").filter({
+      has: page.getByRole("link", { name: "Discount codes" }),
+    })
+    await expect(codes.getByRole("link", { name: "Backend (suggestion)" })).toHaveAttribute(
+      "href",
+      "/docs/screens/settings/discount-codes/backend"
+    )
     // Sections the panel doesn't have yet: plain text, not links.
     await expect(nav(page).getByText("Dashboard")).toBeVisible()
     await expect(nav(page).getByRole("link", { name: "Dashboard" })).toHaveCount(0)
@@ -63,11 +75,9 @@ test.describe("docs site", () => {
     page,
   }) => {
     await open(page, "/docs")
-    await page.getByRole("main").getByRole("link", { name: "Mock data and states" }).click()
+    await page.getByRole("main").getByRole("link", { name: "Mock data", exact: true }).click()
     await expect(page).toHaveURL(/\/docs\/mock-data$/)
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Mock data and states" })
-    ).toBeVisible()
+    await expect(page.getByRole("heading", { level: 1, name: "Mock data" })).toBeVisible()
 
     await open(page, "/docs")
     const claude = page.getByRole("main").getByRole("link", { name: /^CLAUDE\.md/ })
@@ -86,6 +96,14 @@ test.describe("docs site", () => {
     await expect(shot).toHaveJSProperty("complete", true)
     expect(await shot.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
     await expect(page.locator("h2#the-side-panel-editpanel")).toBeVisible()
+  })
+
+  test("backend pages say they are a suggestion", async ({ page }) => {
+    await open(page, "/docs/screens/welcome/setup/backend")
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Onboarding wizard — backend (suggestion)"
+    )
+    await expect(page.getByText("This is a suggestion, not a specification.")).toBeVisible()
   })
 
   test("an unknown page is a 404", async ({ page }) => {

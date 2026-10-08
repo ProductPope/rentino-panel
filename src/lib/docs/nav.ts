@@ -1,5 +1,5 @@
 /**
- * The docs navigation. Guides and Backend list their folder; Screens mirrors the panel's own
+ * The docs navigation. Guides list the docs root; Screens mirrors the panel's own
  * navigation (`NAVIGATION`): the same items in the same order, each linked to the screen doc whose
  * `routes` include the item's href, with sections that aren't built shown as "Soon". Pages nest by
  * folder (screens/welcome/setup/… under Welcome), ordered as their folder's README links them.
@@ -47,9 +47,13 @@ function childrenOf(pages: NavPage[], index: NavPage) {
     const rest = p.file.slice(prefix.length).split("/")
     return rest.length === 1 ? !isIndex(p.file) : rest.length === 2 && rest[1] === "README.md"
   })
+  // A feature's notes close its list, always in the same order; the rest follow the README's links.
+  const NOTES = ["mock-data.md", "backend.md"]
   const rank = (p: NavPage) => {
+    const note = NOTES.indexOf(p.file.split("/").pop() ?? "")
+    if (note !== -1) return Number.MAX_SAFE_INTEGER - NOTES.length + note
     const at = index.links.indexOf(p.file)
-    return at === -1 ? Number.MAX_SAFE_INTEGER : at
+    return at === -1 ? Number.MAX_SAFE_INTEGER - NOTES.length - 1 : at
   }
   return inside.sort((a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title))
 }
@@ -71,7 +75,7 @@ export function treeOf<Icon>(
   }
 }
 
-/** A top-level folder (screens/, backend/) or the docs root: its index as "Overview", then its pages. */
+/** A top-level folder (screens/) or the docs root: its index as "Overview", then its pages. */
 export function folderNav<Icon>(pages: NavPage[], indexFile: string): NavNode<Icon>[] {
   const index = pages.find((p) => p.file === indexFile)
   if (!index) return []
