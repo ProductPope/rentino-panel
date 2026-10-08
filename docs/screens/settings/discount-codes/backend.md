@@ -1,12 +1,17 @@
 ---
-nav: Discount codes
+nav: Backend (suggestion)
 ---
 
-# Discount codes — backend
+# Discount codes — backend (suggestion)
+
+> **This is a suggestion, not a specification.** I don't know the real Rentino backend or its
+> documentation. This page describes what the prototype's screens expect and one way a backend could
+> provide it. Endpoints, payloads, error formats and rules here are proposals to check against the
+> real product before anything is built on them.
 
 Interface: `DiscountCodeRepository` in `src/lib/discount-codes/types.ts`. Mock:
 `src/mocks/discount-codes.ts` (tests: `discount-codes.test.ts`). Screen:
-[Settings → Discount codes](../screens/settings/discount-codes.md). Jira: WHLZ-566.
+[Settings → Discount codes](./README.md). Jira: WHLZ-566.
 
 ## Data
 
@@ -24,7 +29,7 @@ used it), `createdAt`, `updatedAt`.
 | `setActive(id, active)` | `PATCH /discount-codes/{id}` `{active}` | Returns the updated code; used for Undo too |
 | `remove(id)`            | `DELETE /discount-codes/{id}`           | Only unused codes                           |
 
-## Rules the server must enforce
+## Rules a backend would need to enforce (suggested)
 
 - `code`: A–Z, 0–9, `-`, `_`; stored uppercase; ≤ 32 characters; **unique per tenant,
   case-insensitive** → `duplicate_code`.
@@ -44,4 +49,4 @@ used it), `createdAt`, `updatedAt`.
 
 ## Permission
 
-All operations need `discount_codes.manage` (see [session.md](./session.md)).
+All operations need `discount_codes.manage` (see the [session suggestion](../../app-shell/backend.md)).

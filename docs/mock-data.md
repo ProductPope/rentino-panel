@@ -1,72 +1,47 @@
-# Mock data and states
+---
+nav: Mock data
+---
 
-Every state a screen can be in can be opened by URL, so designers, developers and tests can see it
-without a backend. Mock data is per browser (`localStorage`), so on the online prototype every
-visitor has their own copy.
+# Mock data
 
-## Forcing a state: `?mock=`
+There is no backend: every service is a mock behind a typed interface
+([Architecture](./architecture.md)). This page explains the mechanism; **each feature lists its own
+states and data next to its screens**:
 
-Add the parameter to the page's URL. It only changes what the mocks return; nothing else reads it.
+- [Welcome](./screens/welcome/mock-data.md) — onboarding states, trial and plans
+- [Onboarding wizard](./screens/welcome/setup/mock-data.md) — states A–D, demo equipment, simulated
+  preparation
+- [Discount codes](./screens/settings/discount-codes/mock-data.md) — empty, error, the audit log
+- [Panel shell](./screens/app-shell/mock-data.md) — demo users and permissions
 
-| Parameter                 | Where                                | Shows                                                       |
-| ------------------------- | ------------------------------------ | ----------------------------------------------------------- |
-| `?mock=reset`             | Welcome, setup, Discount codes       | Clears the stored data of the page's services; starts over  |
-| `?mock=error`             | Welcome, setup 2/4/5, Discount codes | Loading fails: the error state ("Try again" or "Reload")    |
-| `?mock=empty`             | Discount codes                       | No codes yet: the empty state                               |
-| `?mock=processing`        | Welcome, setup step 2                | B — we're preparing the draft from the price list           |
-| `?mock=processing-long`   | Welcome, setup step 2                | B — a large price list: ready in a few hours                |
-| `?mock=draft-ready`       | Welcome, setup step 2                | C — the draft waits for review                              |
-| `?mock=imported`          | Welcome, setup 4–5                   | D — imported; settings not finished, payments not connected |
-| `?mock=imported-settings` | Welcome, setup 4–5                   | D — settings finished                                       |
-| `?mock=imported-paid`     | Welcome, setup 4–5                   | D — settings finished and payments connected                |
-| `?mock=trial-ending`      | Welcome                              | Trial bar: 3 days left                                      |
-| `?mock=trial-ended`       | Welcome                              | Trial bar: the trial has ended                              |
+## How it works
 
-Forced onboarding states (`processing` … `imported-paid`) count as the current state while the
-parameter is in the URL; saving in step 4 works in them too. Without a parameter, the stored state is
-used — a new visitor starts in state A.
+- **States by URL — `?mock=…`.** Add the parameter to a page's URL to force a state (empty, error, a
+  stage of onboarding…). It only changes what the mocks return; nothing else reads it. Every state is
+  linkable, e.g. on the online prototype.
+- **Data persists per browser** in `localStorage` under `rentino.mock.*`, so changes survive a reload.
+  On the online prototype every visitor has their own copy.
+- **`?mock=reset`** clears the stored data of the page's services.
+- **Demo users** are picked by the `mock_user` cookie.
+- **Latency**: every call waits ~350 ms (`delay()` in `src/mocks/scenario.ts`) so loading states are
+  visible.
+- **Errors and rules**: mocks reject what a backend would, with the same typed errors the UI handles.
 
-## Demo users: the `mock_user` cookie
+## Starting over completely
 
-| Cookie            | User                      | Permissions                             |
-| ----------------- | ------------------------- | --------------------------------------- |
-| none (default)    | Anna Nowak, Owner, Kraków | `discount_codes.manage`                 |
-| `mock_user=staff` | Piotr Zieliński, Staff    | none — Discount codes shows "no access" |
+In DevTools → Application → Local Storage, delete the `rentino.mock.*` keys, or run in the console:
 
-In the browser console: `document.cookie = "mock_user=staff; path=/"`, then reload. Remove it with
-`document.cookie = "mock_user=; path=/; max-age=0"`.
+```js
+Object.keys(localStorage)
+  .filter((k) => k.startsWith("rentino.mock."))
+  .forEach((k) => localStorage.removeItem(k))
+```
 
-## Stored data (`localStorage`)
+## Adding a scenario or stored data
 
-| Key                           | What                                         | Seed                                                     |
-| ----------------------------- | -------------------------------------------- | -------------------------------------------------------- |
-| `rentino.mock.onboarding`     | Onboarding status (stage, account, settings) | State A, account "Bikes Mallorca"                        |
-| `rentino.mock.equipment`      | Equipment added in setup step 3              | 3 demo items: Trek Marlin 7, Club Car Tempo, Wilson RF97 |
-| `rentino.mock.discount-codes` | Discount codes                               | 7 codes covering every status (dates relative to today)  |
-| `rentino.mock.billing`        | Subscription (trial, plan)                   | 30-day trial that started 9 days ago                     |
-| `rentino.mock.audit-log`      | Audit entries written by the mocks           | empty                                                    |
+1. Add the value to the service's mock in `src/mocks/` (and to the comment listing its scenarios at
+   the top of the file).
+2. Describe it on the feature's **Mock data and states** page (`docs/screens/<feature>/mock-data.md`).
+3. If it's a state worth testing, add it to `e2e/helpers.ts` `PAGES`.
 
-Stored data from older versions of the prototype is migrated when read (e.g. equipment `category` →
-`parentCategory`), so a returning visitor doesn't see a broken screen.
-
-## Starting over
-
-- One area: open its page with `?mock=reset` (e.g. `/welcome?mock=reset` resets onboarding and
-  equipment).
-- Everything: in DevTools → Application → Local Storage, delete the `rentino.mock.*` keys, or run
-  `Object.keys(localStorage).filter(k => k.startsWith("rentino.mock.")).forEach(k => localStorage.removeItem(k))`
-  in the console.
-
-## Simulated behaviour
-
-- Every call waits ~350 ms (`delay()` in `src/mocks/scenario.ts`) so loading states are visible.
-- Sending a price list (setup step 1) starts a simulated preparation: one step every ~1.1 s, the
-  draft is ready after ~15 s.
-- Mocks return the same typed errors a backend would (`DiscountCodeError`, `OnboardingError`) and
-  write audit entries for changes to discount codes.
-
-## Adding a scenario
-
-Add the value to the service's mock (and to the comment listing its scenarios at the top of the
-file), add a row above, and — if it's a state worth testing — an entry in `e2e/helpers.ts` `PAGES`.
-`pnpm lint:docs` fails while a scenario is missing here.
+`pnpm lint:docs` fails while a `?mock=` scenario or `rentino.mock.*` key isn't on a feature page.

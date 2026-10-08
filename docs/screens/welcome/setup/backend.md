@@ -1,14 +1,19 @@
 ---
-nav: Onboarding
+nav: Backend (suggestion)
 ---
 
-# Onboarding — backend
+# Onboarding wizard — backend (suggestion)
+
+> **This is a suggestion, not a specification.** I don't know the real Rentino backend or its
+> documentation. This page describes what the prototype's screens expect and one way a backend could
+> provide it. Endpoints, payloads, error formats and rules here are proposals to check against the
+> real product before anything is built on them.
 
 Interface: `OnboardingService` in `src/lib/onboarding/types.ts`. Mock: `src/mocks/onboarding.ts`
-(tests: `onboarding.test.ts`). Screens: [Welcome](../screens/welcome/README.md) and the setup wizard
-([1](../screens/welcome/setup/sources.md) · [2](../screens/welcome/setup/progress.md) ·
-[3](../screens/welcome/setup/equipment.md) · [4](../screens/welcome/setup/settings.md) ·
-[5](../screens/welcome/setup/start.md)).
+(tests: `onboarding.test.ts`). Screens: [Welcome](../README.md) and the setup wizard
+([1](./sources.md) · [2](./progress.md) ·
+[3](./equipment.md) · [4](./settings.md) ·
+[5](./start.md)).
 
 ## The status
 
@@ -75,7 +80,7 @@ In the product it's a job on the server. The UI needs:
   or `null` = "and more", price), hourly packages (hours, price), a nightly price, and **price rules**
   (date range or weekdays, percent or fixed change, active). `validatePricing` lists every rule
   (no overlapping ranges, at least one rate, …); `applyRules` how rules combine on a date. The
-  booking engine must price with the same rules.
+  booking engine would need to price with the same rules.
 - **Booking page** (`src/lib/onboarding/online.ts`): `visible`, `slug` (unique per tenant: the item's
   address `/product/<slug>`), `descriptions` per language (≤ 2000 characters), `descriptionFields`
   and `checkoutFields` (custom field ids). Hidden items aren't listed on the booking page but can

@@ -39,8 +39,9 @@ what we set up (each with a way back to change it), and the last step — connec
 
 ## Data
 
-`getStatus()`, `listEquipment()`, `connectPayments()`. See [onboarding](../../../backend/onboarding.md) —
-Stripe Connect is a backend + redirect flow in the product.
+`getStatus()`, `listEquipment()`, `connectPayments()`. See [backend suggestion](./backend.md) —
+in the product, Stripe Connect would presumably be a backend + redirect flow (a suggestion — the real
+integration isn't known).
 
 ## Components
 

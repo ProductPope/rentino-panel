@@ -31,8 +31,8 @@ email them when the draft is ready, and Welcome shows it too.
 
 ## Data
 
-`onboardingService.getStatus()`, polled. A real backend could push progress instead (see
-[onboarding](../../../backend/onboarding.md)).
+`onboardingService.getStatus()`, polled. A real backend could perhaps push progress instead (see
+[backend suggestion](./backend.md)).
 
 ## Components
 

@@ -1,9 +1,22 @@
-# Backend guidelines
+---
+nav: Backend (suggestions)
+---
 
-> **A proposal, not a decided API.** The frontend was built without a backend. What's fixed is the
-> **TypeScript interface** each screen depends on; how the backend implements it — endpoints,
-> storage, transport — is the backend team's call. The endpoint shapes below are suggestions to
-> start the conversation.
+# Backend — general suggestions
+
+> **This is a suggestion, not a specification.** I don't know the real Rentino backend or its
+> documentation. This page describes what the prototype's screens expect and one way a backend could
+> provide it. Endpoints, payloads, error formats and rules here are proposals to check against the
+> real product before anything is built on them.
+
+What is fixed is the **TypeScript interface** each screen depends on; how a backend implements it —
+endpoints, storage, transport — is the backend team's call. Each feature has its own page with the
+details, next to its screens:
+
+- [Welcome: trial and plans](./screens/welcome/backend.md)
+- [Onboarding wizard](./screens/welcome/setup/backend.md)
+- [Discount codes](./screens/settings/discount-codes/backend.md)
+- [Session, permissions and audit log](./screens/app-shell/backend.md)
 
 ## How the frontend connects
 
@@ -16,20 +29,20 @@ export const discountCodeRepository: DiscountCodeRepository = mockDiscountCodeRe
 
 Connecting a backend = an **adapter** that implements the same interface (HTTP calls, mapping
 responses to the domain types and errors to the domain error class), and changing that line. The
-mock (`src/mocks/<domain>.ts`) is the reference implementation: it shows every rule the backend must
-enforce, and its tests (`src/mocks/*.test.ts`) are a checklist.
+mock (`src/mocks/<domain>.ts`) is the reference implementation: it shows every rule a backend would
+need to enforce, and its tests (`src/mocks/*.test.ts`) are a checklist.
 
-| Domain                          | Interface                    | Page                                     |
-| ------------------------------- | ---------------------------- | ---------------------------------------- |
-| Onboarding                      | `OnboardingService`          | [onboarding.md](./onboarding.md)         |
-| Billing                         | `BillingService`             | [billing.md](./billing.md)               |
-| Discount codes                  | `DiscountCodeRepository`     | [discount-codes.md](./discount-codes.md) |
-| Session, permissions, audit log | `SessionService`, `AuditLog` | [session.md](./session.md)               |
+| Domain                          | Interface                    | Feature page (suggestion)                                      |
+| ------------------------------- | ---------------------------- | -------------------------------------------------------------- |
+| Onboarding                      | `OnboardingService`          | [Onboarding wizard](./screens/welcome/setup/backend.md)        |
+| Billing                         | `BillingService`             | [Welcome: trial and plans](./screens/welcome/backend.md)       |
+| Discount codes                  | `DiscountCodeRepository`     | [Discount codes](./screens/settings/discount-codes/backend.md) |
+| Session, permissions, audit log | `SessionService`, `AuditLog` | [Panel shell](./screens/app-shell/backend.md)                  |
 
 ## Principles
 
-1. **The server enforces every rule.** Frontend validation is there for quick feedback; the same rules
-   must hold on the server (uniqueness, ranges, "a used code can't be deleted"). The rules are pure
+1. **The server should enforce every rule.** Frontend validation is there for quick feedback; the same rules
+   should hold on the server (uniqueness, ranges, "a used code can't be deleted"). The rules are pure
    functions in `src/lib/<domain>/` with tests — use them as the specification.
 2. **Errors carry a reason.** Each domain has a small set of reasons (`DiscountCodeError`,
    `OnboardingError`). Suggested error body:
@@ -43,8 +56,8 @@ enforce, and its tests (`src/mocks/*.test.ts`) are a checklist.
 
 3. **Everything belongs to a tenant** (the rental business). Uniqueness is per tenant (discount codes,
    unit codes, booking page addresses).
-4. **Permissions are checked on every call**, not only by hiding UI. See [session.md](./session.md).
-5. **Every change is audited**: who, what, on which object, when. See [session.md](./session.md).
+4. **Permissions are checked on every call**, not only by hiding UI. See [Panel shell](./screens/app-shell/backend.md).
+5. **Every change is audited**: who, what, on which object, when. See [Panel shell](./screens/app-shell/backend.md).
 6. **Derived values are computed, not stored** — e.g. a discount code's status follows from `active`
    and its dates; the server returns the raw fields and may add the derived ones.
 

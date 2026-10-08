@@ -10,7 +10,7 @@ status: prototype
 The frame around every page inside the panel: the sidebar with the navigation, the booking page
 link and the account menu.
 
-![Discount codes in the panel shell](../img/discount-codes.jpg)
+![Discount codes in the panel shell](../../img/discount-codes.jpg)
 
 ## What's in it
 
@@ -21,7 +21,7 @@ link and the account menu.
   live).
 - **Collapsing**: the sidebar collapses to icons (the choice is kept in the `sidebar_state` cookie).
   On small screens the navigation is a sheet opened from the header.
-- **View booking page** opens the public booking page [in a new tab](./booking-page.md), with the
+- **View booking page** opens the public booking page [in a new tab](../booking-page.md), with the
   external-link icon and "(opens in a new tab)" for screen readers.
 
 ## Files
@@ -34,10 +34,16 @@ link and the account menu.
 ## Adding a section to the navigation
 
 Add (or un-flag) the item in `navigation.tsx`, add the route under `src/app/(admin)/`, then follow
-[Adding a screen](../README.md#adding-a-screen).
+[Adding a screen](../../README.md#adding-a-screen).
 
 ## Tests
 
 `e2e/keyboard.spec.ts` — focus on every Tab stop, no keyboard trap, the mobile navigation sheet
 (focus trapped while open, Escape closes, focus returns), the booking page link. Sidebar collapsed:
 axe in `e2e/a11y.spec.ts`.
+
+## Mock data and backend
+
+- [Mock data and states](./mock-data.md) — demo users and permissions.
+- [Backend (suggestion)](./backend.md) — session, permissions and the audit log. A suggestion only:
+  the real product's backend wasn't available.

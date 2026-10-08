@@ -3,8 +3,13 @@
 A clickable prototype of the Rentino admin panel, built on the
 [EQ-librium](https://eq-librium.vercel.app/docs) design system. **There is no backend**: everything a
 backend would provide is mocked behind typed interfaces. These docs are for frontend developers, who
-take the screens and the interfaces from here. They also carry guidelines for whoever builds the
-backend.
+take the screens and the interfaces from here. They also carry **backend suggestions** — only
+suggestions: the real product's backend and its documentation weren't available when this was
+written.
+
+Everything about a feature sits with that feature: its screens, its **Mock data and states** and its
+**Backend (suggestion)** pages are in the same folder and under it in the menu (e.g. the
+[setup wizard](./screens/welcome/setup/README.md)).
 
 Read them on the site, <https://rentino-panel.vercel.app/docs>, or here on GitHub — it's the same
 Markdown ([how the site works](./screens/docs-site.md)). Docs grow with the panel: every new screen
@@ -12,17 +17,17 @@ gets its own page (see [Adding a screen](#adding-a-screen)).
 
 ## Contents
 
-| Page                                      | What's in it                                                                    |
-| ----------------------------------------- | ------------------------------------------------------------------------------- |
-| [Getting started](./getting-started.md)   | Run it, the stack, the folders, the rules every change follows                  |
-| [Architecture](./architecture.md)         | UI → typed interfaces → mocks; where business rules live; how a mock is swapped |
-| [Mock data and states](./mock-data.md)    | `?mock=` scenarios, demo users, demo data, starting over                        |
-| [Screens](./screens/README.md)            | One page per screen: purpose, states, components, rules, screenshots            |
-| [Backend guidelines](./backend/README.md) | What each service must provide and enforce — a proposal, not a decided API      |
-| [Accessibility](./accessibility.md)       | WCAG 2.2 AA: what is tested and how to test a new screen                        |
-| [Deployment](./deployment.md)             | The online prototype on Vercel                                                  |
-| [Decisions](./decisions.md)               | Why things are the way they are                                                 |
-| [EQ-librium gaps](./eq-librium-gaps.md)   | What the design system lacks, and the stand-in used here                        |
+| Page                                    | What's in it                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------- |
+| [Getting started](./getting-started.md) | Run it, the stack, the folders, the rules every change follows                  |
+| [Architecture](./architecture.md)       | UI → typed interfaces → mocks; where business rules live; how a mock is swapped |
+| [Mock data](./mock-data.md)             | How the mocks work, starting over; each feature's states are on its own page    |
+| [Screens](./screens/README.md)          | One page per screen: purpose, states, components, rules, screenshots            |
+| [Backend suggestions](./backend.md)     | General suggestions for a backend; each feature has its own suggestion page     |
+| [Accessibility](./accessibility.md)     | WCAG 2.2 AA: what is tested and how to test a new screen                        |
+| [Deployment](./deployment.md)           | The online prototype on Vercel                                                  |
+| [Decisions](./decisions.md)             | Why things are the way they are                                                 |
+| [EQ-librium gaps](./eq-librium-gaps.md) | What the design system lacks, and the stand-in used here                        |
 
 Project conventions (for people and for Claude Code sessions) are in [CLAUDE.md](../CLAUDE.md); CI
 rules in [.github/CI.md](../.github/CI.md).
@@ -43,14 +48,14 @@ When the docs and the code disagree, the code wins — and the docs get fixed in
 
 Docs are updated **in the same PR as the change**, not afterwards:
 
-| When a PR…                                         | …it also updates                                                  |
-| -------------------------------------------------- | ----------------------------------------------------------------- |
-| adds a route or screen                             | a new `docs/screens/<name>.md` + the [index](./screens/README.md) |
-| changes what a screen shows or does                | that screen's page (and its screenshot: `pnpm docs:screens`)      |
-| adds or changes a service method, error or rule    | [backend guidelines](./backend/README.md) for that domain         |
-| adds a `?mock=` scenario, demo user or storage key | [mock data](./mock-data.md)                                       |
-| makes a product or design decision                 | [decisions](./decisions.md)                                       |
-| works around something missing in EQ-librium       | [EQ-librium gaps](./eq-librium-gaps.md)                           |
+| When a PR…                                         | …it also updates                                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| adds a route or screen                             | a page in the feature's folder in `docs/screens/` + the [index](./screens/README.md) |
+| changes what a screen shows or does                | that screen's page (and its screenshot: `pnpm docs:screens`)                         |
+| adds or changes a service method, error or rule    | the feature's `backend.md` (a suggestion page)                                       |
+| adds a `?mock=` scenario, demo user or storage key | the feature's `mock-data.md`                                                         |
+| makes a product or design decision                 | [decisions](./decisions.md)                                                          |
+| works around something missing in EQ-librium       | [EQ-librium gaps](./eq-librium-gaps.md)                                              |
 
 `pnpm lint:docs` (run in CI) fails when a route has no screen page, a screen page isn't in the index,
 a mock scenario, storage key, service or permission is undocumented, or a link is broken. The PR
@@ -66,5 +71,7 @@ template has a docs checkbox for what a script can't check: that the words are s
    sidebar, the menu picks it up from `src/config/navigation.tsx` by its route.
 3. Add its states to `scripts/docs/screens.spec.ts`, run `pnpm build && pnpm docs:screens`, commit the
    images in `docs/img/`.
-4. If it has a service: a page in `docs/backend/`.
+4. A feature with its own data gets `mock-data.md` (its states by URL, stored data) and, if it has a
+   service, `backend.md` (a **suggestion** — start it with the same note as the others), both in
+   its folder and linked from its README.
 5. `pnpm lint:docs`.

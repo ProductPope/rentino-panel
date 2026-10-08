@@ -12,7 +12,7 @@ The docs follow the panel's navigation — folders mirror routes (`screens/welco
 
 | Screen                                                       | Route                      | Status    |
 | ------------------------------------------------------------ | -------------------------- | --------- |
-| [Panel shell and navigation](./app-shell.md)                 | every page in the panel    | prototype |
+| [Panel shell and navigation](./app-shell/README.md)          | every page in the panel    | prototype |
 | [Welcome](./welcome/README.md)                               | `/welcome` (`/` redirects) | prototype |
 | ↳ [Setup wizard](./welcome/setup/README.md)                  | `/welcome/setup/…`         | prototype |
 | ↳ ↳ [1 · Your details](./welcome/setup/sources.md)           | `/welcome/setup/sources`   | prototype |
@@ -21,7 +21,7 @@ The docs follow the panel's navigation — folders mirror routes (`screens/welco
 | ↳ ↳ [4 · Settings](./welcome/setup/settings.md)              | `/welcome/setup/settings`  | prototype |
 | ↳ ↳ [5 · Start](./welcome/setup/start.md)                    | `/welcome/setup/start`     | prototype |
 | [Settings](./settings/README.md)                             | `/settings/…`              | —         |
-| ↳ [Discount codes](./settings/discount-codes.md)             | `/settings/discount-codes` | prototype |
+| ↳ [Discount codes](./settings/discount-codes/README.md)      | `/settings/discount-codes` | prototype |
 | [Booking page](./booking-page.md)                            | `/booking-page`            | stand-in  |
 | [Docs site](./docs-site.md)                                  | `/docs/…`                  | prototype |
 

@@ -69,8 +69,12 @@ without its docs is not done. Map of what to update: `docs/README.md` → "Keepi
   in `docs/screens/README.md`.
 - Changed screen → its page; refresh screenshots (`pnpm build && pnpm docs:screens`, shots in
   `scripts/docs/screens.spec.ts`) when what it shows changed.
-- Service method, error reason, permission or business rule → `docs/backend/<domain>.md`.
-- `?mock=` scenario, demo user, `rentino.mock.*` key → `docs/mock-data.md`.
+- Docs live with their feature: next to a feature's screen pages are its `mock-data.md` (states by URL,
+  stored data) and `backend.md`, linked from the feature's README so they show under it in the menu.
+- Service method, error reason, permission or business rule → the feature's `backend.md`. Backend
+  pages are **suggestions** — the real product's backend isn't known — and open with
+  "**This is a suggestion, not a specification.**"; say "would", "suggested", never state it as fact.
+- `?mock=` scenario, demo user, `rentino.mock.*` key → the feature's `mock-data.md`.
 - Product/design decision or open question → `docs/decisions.md`; EQ stand-in → `docs/eq-librium-gaps.md`.
 - `pnpm lint:docs` (CI) checks routes, index, mock scenarios and keys, services, permissions and links.
 
