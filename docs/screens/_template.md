@@ -34,7 +34,8 @@ Point to the functions and their tests rather than restating them:
 
 ## Data
 
-Service methods the screen calls, and when. Link the [backend page](../backend/README.md).
+Service methods the screen calls, and when. Link the feature's **Backend (suggestion)** page
+(`backend.md` in its folder).
 
 ## Components
 

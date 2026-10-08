@@ -32,7 +32,7 @@ no file), `formatFileSize` (tests: `rules.test.ts`).
 ## Data
 
 `onboardingService.submitSources({ fileName })` — only the file name is sent; the mock simulates the
-preparation. A real backend uploads the file — see [onboarding](../../../backend/onboarding.md).
+preparation. A real backend would presumably take the upload — see the [backend suggestion](./backend.md).
 
 ## Components
 

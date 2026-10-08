@@ -15,7 +15,7 @@ flowchart LR
   subgraph MOCKS["src/mocks"]
     mock["mock service<br/>localStorage, latency, ?mock="]
   end
-  backend[(Real backend<br/>later)]
+  backend[(A real backend<br/>later — not known yet)]
   page --> types
   page --> rules
   page --> index
@@ -44,14 +44,14 @@ flowchart LR
 
 ## Domains
 
-| Domain           | Interface                      | Used by                                  | Backend page                                                     |
-| ---------------- | ------------------------------ | ---------------------------------------- | ---------------------------------------------------------------- |
-| `onboarding`     | `OnboardingService`            | Welcome, setup wizard steps 1–5          | [onboarding](./backend/onboarding.md)                            |
-| `billing`        | `BillingService`               | Welcome: trial bar, plans                | [billing](./backend/billing.md)                                  |
-| `discount-codes` | `DiscountCodeRepository`       | Settings → Discount codes                | [discount codes](./backend/discount-codes.md)                    |
-| `session`        | `SessionService` (server only) | admin layout, permission checks          | [session and permissions](./backend/session.md)                  |
-| `audit-log`      | `AuditLog`                     | written by mocks (Settings → Logs later) | [session and permissions](./backend/session.md)                  |
-| `tenant`         | — (constants)                  | money and date formatting                | [backend guidelines](./backend/README.md#money-dates-and-locale) |
+| Domain           | Interface                      | Used by                                  | Backend (suggestion)                                           |
+| ---------------- | ------------------------------ | ---------------------------------------- | -------------------------------------------------------------- |
+| `onboarding`     | `OnboardingService`            | Welcome, setup wizard steps 1–5          | [onboarding](./screens/welcome/setup/backend.md)               |
+| `billing`        | `BillingService`               | Welcome: trial bar, plans                | [billing](./screens/welcome/backend.md)                        |
+| `discount-codes` | `DiscountCodeRepository`       | Settings → Discount codes                | [discount codes](./screens/settings/discount-codes/backend.md) |
+| `session`        | `SessionService` (server only) | admin layout, permission checks          | [session and permissions](./screens/app-shell/backend.md)      |
+| `audit-log`      | `AuditLog`                     | written by mocks (Settings → Logs later) | [session and permissions](./screens/app-shell/backend.md)      |
+| `tenant`         | — (constants)                  | money and date formatting                | [backend suggestions](./backend.md#money-dates-and-locale)     |
 
 ## Rendering
 

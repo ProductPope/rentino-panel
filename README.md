@@ -6,15 +6,15 @@ backend**: data and session are mocked behind typed interfaces.
 
 - **Online prototype**: <https://rentino-panel.vercel.app> (starts at `/welcome`)
 - **Documentation**: <https://rentino-panel.vercel.app/docs>, or [docs/](./docs/README.md) here —
-  screens, mock states, architecture, backend guidelines
+  screens, their mock states and backend suggestions, architecture
 
 ## What's in it
 
-| Screen                                                                     | Route                      |
-| -------------------------------------------------------------------------- | -------------------------- |
-| [Welcome](./docs/screens/welcome/README.md) (onboarding A–D, trial, plans) | `/welcome`                 |
-| [Setup wizard](./docs/screens/README.md#the-onboarding-flow), steps 1–5    | `/welcome/setup/*`         |
-| [Settings → Discount codes](./docs/screens/settings/discount-codes.md)     | `/settings/discount-codes` |
+| Screen                                                                        | Route                      |
+| ----------------------------------------------------------------------------- | -------------------------- |
+| [Welcome](./docs/screens/welcome/README.md) (onboarding A–D, trial, plans)    | `/welcome`                 |
+| [Setup wizard](./docs/screens/README.md#the-onboarding-flow), steps 1–5       | `/welcome/setup/*`         |
+| [Settings → Discount codes](./docs/screens/settings/discount-codes/README.md) | `/settings/discount-codes` |
 
 Every state can be opened by URL, e.g. `/welcome?mock=draft-ready` —
 [all of them](./docs/mock-data.md). `?mock=reset` starts over.

@@ -41,3 +41,10 @@ flowchart TD
 5. **Start** — the booking page preview and connecting payments.
 
 Files: `src/app/welcome/setup/*/page.tsx`, `src/components/app/setup/`.
+
+## Mock data and backend
+
+- [Mock data and states](./mock-data.md) — every state of the wizard by URL, the demo equipment, the
+  simulated preparation.
+- [Backend (suggestion)](./backend.md) — what `OnboardingService` would need from a real backend.
+  A suggestion only: the real product's backend wasn't available.

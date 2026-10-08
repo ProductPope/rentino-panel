@@ -62,8 +62,8 @@ Premium**, which opens the **Choose a plan** dialog (monthly / annual, annual �
 ## Data
 
 `onboardingService.getStatus()` on load; `billingService.getSubscription()` for the trial bar,
-`choosePlan()` from the dialog. See [onboarding](../../backend/onboarding.md) and
-[billing](../../backend/billing.md).
+`choosePlan()` from the dialog. See [onboarding backend suggestion](./setup/backend.md) and
+[billing backend suggestion](./backend.md).
 
 ## Components
 
@@ -81,3 +81,10 @@ Premium**, which opens the **Choose a plan** dialog (monthly / annual, annual �
 ## Tests
 
 `e2e/welcome.spec.ts` (states A–D, actions, errors), `e2e/trial.spec.ts` (trial bar, plans dialog).
+
+## Mock data and backend
+
+- [Mock data and states](./mock-data.md) — states A–D and the trial by URL.
+- [Backend (suggestion)](./backend.md) — the trial and plans (`BillingService`); the onboarding
+  status is on the [wizard's backend page](./setup/backend.md). A suggestion only: the real
+  product's backend wasn't available.

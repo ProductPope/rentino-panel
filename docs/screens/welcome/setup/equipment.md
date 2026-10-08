@@ -89,7 +89,7 @@ All in `src/lib/onboarding/` with tests next to them:
 
 `listEquipment`, `addEquipment`, `putEquipment` (save, undo), `removeEquipment`, `listCustomFields`,
 `getStatus` (for the booking page address), `importEquipment` (Approve). See
-[onboarding](../../../backend/onboarding.md).
+[backend suggestion](./backend.md).
 
 ## Components
 

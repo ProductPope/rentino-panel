@@ -1,8 +1,13 @@
 ---
-nav: Session and permissions
+nav: Backend (suggestion)
 ---
 
-# Session, permissions and audit log — backend
+# Session, permissions and audit log — backend (suggestion)
+
+> **This is a suggestion, not a specification.** I don't know the real Rentino backend or its
+> documentation. This page describes what the prototype's screens expect and one way a backend could
+> provide it. Endpoints, payloads, error formats and rules here are proposals to check against the
+> real product before anything is built on them.
 
 ## Session
 
@@ -26,7 +31,7 @@ Permissions are granted per role (Settings → Roles, not built yet).
 | ----------------------- | ---------------------------------------- | -------------------------------------------------- |
 | `discount_codes.manage` | See and change Settings → Discount codes | `src/app/(admin)/settings/discount-codes/page.tsx` |
 
-The UI hides what the user can't do and explains why; **the server must reject the same calls**
+The UI hides what the user can't do and explains why; **a backend should reject the same calls**
 (`403`). Add each new permission to the union, this table and the screen that checks it.
 
 ## Audit log

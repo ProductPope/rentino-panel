@@ -25,8 +25,11 @@ const PAGES: NavPage[] = [
   page("screens/welcome/README.md", {
     title: "Welcome",
     routes: ["/", "/welcome"],
-    links: ["screens/welcome/setup/README.md"],
+    // Linked backend first on purpose: notes still close the list, mock data first.
+    links: ["screens/welcome/backend.md", "screens/welcome/setup/README.md"],
   }),
+  page("screens/welcome/backend.md", { title: "Billing backend", nav: "Backend (suggestion)" }),
+  page("screens/welcome/mock-data.md", { title: "Welcome mocks", nav: "Mock data and states" }),
   page("screens/welcome/setup/README.md", {
     title: "Setup wizard",
     links: ["screens/welcome/setup/sources.md", "screens/welcome/setup/equipment.md"],
@@ -70,7 +73,14 @@ describe("screensNav", () => {
     expect(labels(nav)).toEqual([
       "Overview",
       "Panel shell",
-      ["Welcome", [["Setup wizard", ["1 · Sources", "2 · Equipment"]]]],
+      [
+        "Welcome",
+        [
+          ["Setup wizard", ["1 · Sources", "2 · Equipment"]],
+          "Mock data and states",
+          "Backend (suggestion)",
+        ],
+      ],
       "Dashboard",
       ["Settings", ["Users", "Discount codes"]],
       "Booking page",

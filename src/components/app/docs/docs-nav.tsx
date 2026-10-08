@@ -20,14 +20,14 @@ const toItem = (item: PanelItem): PanelNavItem<ReactNode> => ({
 const PANEL = NAVIGATION.flatMap((group) => group.items.map(toItem))
 
 /**
- * The docs menu: Guides, Screens (the panel's own navigation, with sections that aren't built
- * marked "Soon") and Backend. On narrow screens it follows the article.
+ * The docs menu: Guides, and Screens — the panel's own navigation, with sections that aren't built
+ * marked "Soon". Each feature's mock data and backend suggestion sit under it. On narrow screens it
+ * follows the article.
  */
 export function DocsNav({ pages, current }: { pages: DocPage[]; current: string }) {
   const groups: { title: string; nodes: NavNode<ReactNode>[] }[] = [
     { title: "Guides", nodes: folderNav(pages, "README.md") },
     { title: "Screens", nodes: screensNav(pages, PANEL) },
-    { title: "Backend", nodes: folderNav(pages, "backend/README.md") },
   ]
   return (
     <nav aria-label="Documentation" className="flex flex-col gap-6 lg:order-1">

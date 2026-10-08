@@ -1,11 +1,16 @@
 ---
-nav: Billing
+nav: Backend (suggestion)
 ---
 
-# Billing — backend
+# Welcome: trial and plans — backend (suggestion)
+
+> **This is a suggestion, not a specification.** I don't know the real Rentino backend or its
+> documentation. This page describes what the prototype's screens expect and one way a backend could
+> provide it. Endpoints, payloads, error formats and rules here are proposals to check against the
+> real product before anything is built on them.
 
 Interface: `BillingService` in `src/lib/billing/types.ts`. Mock: `src/mocks/billing.ts`. Screen:
-[Welcome](../screens/welcome/README.md) (trial bar, plans dialog).
+[Welcome](./README.md) (trial bar, plans dialog).
 
 ## Data
 
@@ -26,4 +31,4 @@ request), with branches and logins per plan.
   (`showsTrial`).
 - Annual billing is 20% off, rounded down to whole units (`monthlyPrice`, `annualTotal`).
 - **Prices are placeholders** — the plan list, prices and limits should come from the server (or a
-  billing provider) rather than the frontend constants. See [Decisions](../decisions.md#open).
+  billing provider) rather than the frontend constants. See [Decisions](../../decisions.md#open).

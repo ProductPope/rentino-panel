@@ -44,7 +44,7 @@ service (`vat_not_confirmed`).
 ## Data
 
 `getStatus()` (current settings), `saveSettings(settings)` — needs stage `imported` and a confirmed VAT
-rate; marks settings done. See [onboarding](../../../backend/onboarding.md).
+rate; marks settings done. See [backend suggestion](./backend.md).
 
 ## Components
 
